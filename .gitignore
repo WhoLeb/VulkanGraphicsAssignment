@@ -5,8 +5,11 @@
 
 
 *.vcxproj*
+<<<<<<< HEAD
 *.sln
 *.spv
+=======
+>>>>>>> adb51421dfe3b84cf9d963ccf09ccc5828a24a40
 
 
 # User-specific files
