@@ -1,7 +1,12 @@
+#pragma once
+
 #include "Device.h"
 #include "Window.h"
 #include "Pipeline.h"
+#include "SwapChain.h"
 
+#include <memory>
+#include <vector>
 
 namespace assignment
 {
@@ -12,12 +17,27 @@ namespace assignment
 		const int HEIGHT = 600;
 
 	public:
+		Application();
+		~Application();
+
+		NO_COPY(Application);
+
+	public:
 		void run();
 
 	private:
-		Window window{ WIDTH, HEIGHT, "Application" };
+		void createPipelineLayout();
+		void createPipeline();
+		void createCommandBuffers();
+		void drawFrame();
 
+	private:
+		Window window{ WIDTH, HEIGHT, "Application" };
 		Device device{ window };
-		Pipeline pipeline{ device,  "./shaders/vert.spv", "./shaders/frag.spv", Pipeline::defaultPipelineConfigInfo(WIDTH, HEIGHT) };
+		SwapChain swapChain{ device, window.getExtent() };
+
+		std::unique_ptr<Pipeline> pipeline;
+		VkPipelineLayout pipelineLayout;
+		std::vector<VkCommandBuffer> commandBuffers;
 	};
 }

@@ -17,6 +17,8 @@ namespace assignment
 		~Window();
 
 		bool shouldClose() { return glfwWindowShouldClose(window); }
+		VkExtent2D getExtent() { return { uint32_t(width), uint32_t(height) }; }
+
 		void createWindowSurface(VkInstance instance, VkSurfaceKHR* surface);
 
 	private:

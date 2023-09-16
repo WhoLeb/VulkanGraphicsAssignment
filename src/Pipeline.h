@@ -8,7 +8,22 @@
 
 namespace assignment
 {
-	struct PipelineConfigInfo {};
+	struct PipelineConfigInfo
+	{
+		VkViewport								viewport;
+		VkRect2D								scisor;
+		VkPipelineInputAssemblyStateCreateInfo	inputAssemblyInfo;
+		VkPipelineRasterizationStateCreateInfo	rasterizationInfo;
+		VkPipelineMultisampleStateCreateInfo	multisampleInfo;
+		VkPipelineColorBlendAttachmentState		colorBlendAttachment;
+		VkPipelineColorBlendStateCreateInfo		colorBlendInfo;
+		VkPipelineDepthStencilStateCreateInfo	depthStencilInfo;
+		//std::vector<VkDynamicState>				dynamicStates;
+		//VkPipelineDynamicStateCreateInfo		dynamicStateInfo;
+		VkPipelineLayout						pipelineLayout = nullptr;
+		VkRenderPass							renderPass = nullptr;
+		uint32_t								subpass = 0;
+	};
 
 	class Pipeline
 	{
@@ -20,8 +35,10 @@ namespace assignment
 			const std::string& vertFilepath,
 			const std::string& fragFilepath,
 			const PipelineConfigInfo& configInfo);
-		~Pipeline() {};
+		~Pipeline();
 
+	public:
+		void bind(VkCommandBuffer commandBuffer);
 		static PipelineConfigInfo defaultPipelineConfigInfo(uint32_t width, uint32_t height);
 
 	private:
