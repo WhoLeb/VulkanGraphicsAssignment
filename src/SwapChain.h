@@ -4,6 +4,7 @@
 
 #include <vulkan/vulkan.h>
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -17,6 +18,7 @@ namespace assignment
 		
 	public:
 		SwapChain(Device& r_device, VkExtent2D windowExtent);
+		SwapChain(Device& r_device, VkExtent2D windowExtent, std::shared_ptr<SwapChain> previous);
 		~SwapChain();
 
 		NO_COPY(SwapChain);
@@ -37,7 +39,13 @@ namespace assignment
 		VkResult acquireNextImage(uint32_t* index);
 		VkResult submitCommandBuffers(const VkCommandBuffer* buffers, uint32_t* imageIndex);
 
+		bool compareSwapFormats(const SwapChain& swapChain) const
+		{
+			return swapChain.swapChainDepthFormat == swapChainDepthFormat && swapChain.swapChainImageFormat == swapChainImageFormat;
+		}
+
 	private:
+		void init();
 		void createSwapChain();
 		void createImageViews();
 		void createDepthResourses();
@@ -51,6 +59,7 @@ namespace assignment
 
 	private:
 		VkFormat swapChainImageFormat;
+		VkFormat swapChainDepthFormat;
 		VkExtent2D swapChainExtent;
 
 		std::vector<VkFramebuffer> swapChainFramebuffers;
@@ -66,6 +75,7 @@ namespace assignment
 		VkExtent2D windowExtent;
 
 		VkSwapchainKHR swapChain;
+		std::shared_ptr<SwapChain> oldSwapChain;
 
 		std::vector<VkSemaphore> imageAvailableSemaphores;
 		std::vector<VkSemaphore> renderFinishedSemaphores;

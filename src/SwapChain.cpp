@@ -12,12 +12,15 @@ namespace assignment
 	SwapChain::SwapChain(Device& r_device, VkExtent2D windowExtent)
 		: m_device(r_device), windowExtent(windowExtent)
 	{
-		createSwapChain();
-		createImageViews();
-		createRenderPass();
-		createDepthResourses();
-		createFramebuffers();
-		createSyncObjects();
+		init();
+	}
+
+	SwapChain::SwapChain(Device& r_device, VkExtent2D windowExtent, std::shared_ptr<SwapChain> previous)
+		: m_device(r_device), windowExtent(windowExtent), oldSwapChain(previous)
+	{
+		init();
+
+		oldSwapChain = nullptr;
 	}
 
 	SwapChain::~SwapChain()
@@ -122,6 +125,16 @@ namespace assignment
 		return result;
 	}
 
+	void SwapChain::init()
+	{
+		createSwapChain();
+		createImageViews();
+		createRenderPass();
+		createDepthResourses();
+		createFramebuffers();
+		createSyncObjects();
+	}
+
 	void SwapChain::createSwapChain()
 	{
 		SwapChainSupportDetails swapChainSupport = m_device.getSwapChainSupport();
@@ -167,7 +180,7 @@ namespace assignment
 		createInfo.presentMode = presentMode;
 		createInfo.clipped = VK_TRUE;
 
-		createInfo.oldSwapchain = VK_NULL_HANDLE;
+		createInfo.oldSwapchain = oldSwapChain == nullptr ? VK_NULL_HANDLE : oldSwapChain->swapChain;
 
 		if (vkCreateSwapchainKHR(m_device.device(), &createInfo, nullptr, &swapChain) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create swap chain!");
@@ -210,6 +223,7 @@ namespace assignment
 	void SwapChain::createDepthResourses()
 	{
 		VkFormat depthFormat = findDepthFormat();
+		swapChainDepthFormat = depthFormat;
 		VkExtent2D swapChainExtent = getSwapChainExtent();
 
 		depthImages.resize(imageCount());
@@ -295,13 +309,10 @@ namespace assignment
 		VkSubpassDependency dependency{};
 		dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
 		dependency.srcAccessMask = 0;
-		dependency.srcStageMask =
-			VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+		dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
 		dependency.dstSubpass = 0;
-		dependency.dstStageMask =
-			VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-		dependency.dstAccessMask =
-			VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+		dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+		dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
 		std::array<VkAttachmentDescription, 2> attachments = { colorAttachment, depthAttachment };
 		VkRenderPassCreateInfo renderPassInfo = {};
@@ -370,7 +381,7 @@ namespace assignment
 	VkSurfaceFormatKHR SwapChain::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
 	{
 		for (const auto& availableFormat : availableFormats) {
-			if (availableFormat.format == VK_FORMAT_B8G8R8A8_UNORM &&
+			if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB &&
 				availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
 				return availableFormat;
 			}

@@ -1,9 +1,9 @@
 #pragma once
 
 #include "Device.h"
+#include "GameObject.h"
 #include "Window.h"
-#include "Pipeline.h"
-#include "SwapChain.h"
+#include "Renderer.h"
 
 #include <memory>
 #include <vector>
@@ -26,18 +26,13 @@ namespace assignment
 		void run();
 
 	private:
-		void createPipelineLayout();
-		void createPipeline();
-		void createCommandBuffers();
-		void drawFrame();
+		void loadGameObjects();
 
 	private:
 		Window window{ WIDTH, HEIGHT, "Application" };
 		Device device{ window };
-		SwapChain swapChain{ device, window.getExtent() };
+		Renderer renderer{ window, device };
 
-		std::unique_ptr<Pipeline> pipeline;
-		VkPipelineLayout pipelineLayout;
-		std::vector<VkCommandBuffer> commandBuffers;
+		std::vector<GameObject> gameObjects;
 	};
 }

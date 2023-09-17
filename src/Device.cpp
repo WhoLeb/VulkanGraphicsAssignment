@@ -143,7 +143,7 @@ namespace assignment
 
 		float queuePriority = 1.0f;
 		for (uint32_t queueFamily : uniqueQueueFamilies) {
-			VkDeviceQueueCreateInfo queueCreateInfo = {};
+			VkDeviceQueueCreateInfo queueCreateInfo{};
 			queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
 			queueCreateInfo.queueFamilyIndex = queueFamily;
 			queueCreateInfo.queueCount = 1;
@@ -154,7 +154,7 @@ namespace assignment
 		VkPhysicalDeviceFeatures deviceFeatures = {};
 		deviceFeatures.samplerAnisotropy = VK_TRUE;
 
-		VkDeviceCreateInfo createInfo = {};
+		VkDeviceCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 
 		createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
@@ -185,7 +185,7 @@ namespace assignment
 	void Device::createCommandPool() {
 		QueueFamilyIndices queueFamilyIndices = findPhysicalQueueFamilies();
 
-		VkCommandPoolCreateInfo poolInfo = {};
+		VkCommandPoolCreateInfo poolInfo{};
 		poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 		poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily;
 		poolInfo.flags =
