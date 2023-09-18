@@ -4,6 +4,7 @@
 #include "Device.h"
 #include "GameObject.h"
 #include "Pipeline.h"
+#include "FrameInfo.h"
 
 #include <memory>
 #include <vector>
@@ -19,7 +20,7 @@ namespace assignment
 		NO_COPY(SimpleRenderSystem);
 
 	public:
-		void renderGameObjects(VkCommandBuffer commandBuffer, std::vector<GameObject>& gameObjects, const Camera& camera);
+		void renderGameObjects(FrameInfo& frameInfo, std::vector<GameObject>& gameObjects);
 
 	private:
 		void createPipelineLayout();

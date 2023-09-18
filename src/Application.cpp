@@ -36,6 +36,11 @@ namespace
 
 namespace assignment
 {
+	struct GlobalUbo {
+		glm::mat4 projectionView{ 1.f };
+		glm::vec3 lightDirection = glm::normalize(glm::vec3{ 1.f, -3.f, -1.f });
+	};
+
 	Application::Application()
 	{
 		loadGameObjects();
@@ -45,6 +50,19 @@ namespace assignment
 
 	void Application::run()
 	{
+		std::vector<std::unique_ptr<Buffer>> uboBuffers(SwapChain::MAX_FRAMES_IN_FLIGHT);
+		for (int i = 0; i < uboBuffers.size(); i++)
+		{
+			uboBuffers[i] = std::make_unique<Buffer>(
+				device,
+				sizeof(GlobalUbo),
+				1,
+				VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+
+			uboBuffers[i]->map();
+		}
+
 		SimpleRenderSystem simpleRenderSystem(device, renderer.getSwapChainRenderPass());
 
 		auto viewerObject = GameObject::createGameObject();
@@ -72,8 +90,23 @@ namespace assignment
 
 			if (auto commandBuffer = renderer.beginFrame())
 			{
+				int frameIndex = renderer.getFrameIndex();
+				FrameInfo frameInfo{
+					frameIndex,
+					frameTime,
+					commandBuffer,
+					camera
+				};
+
+				// update
+				GlobalUbo ubo{};
+				ubo.projectionView = camera.getProjection() * camera.getView();
+				uboBuffers[frameIndex]->writeToBuffer(&ubo);
+				uboBuffers[frameIndex]->flush();
+
+				// render
 				renderer.beginSwapChainRenderPass(commandBuffer);
-				simpleRenderSystem.renderGameObjects(commandBuffer, gameObjects, camera);
+				simpleRenderSystem.renderGameObjects(frameInfo, gameObjects);
 				renderer.endSwapChainRenderPass(commandBuffer);
 				renderer.endFrame();
 			}
