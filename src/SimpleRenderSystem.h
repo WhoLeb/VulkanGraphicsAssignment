@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Camera.h"
 #include "Device.h"
 #include "GameObject.h"
 #include "Pipeline.h"
@@ -18,7 +19,7 @@ namespace assignment
 		NO_COPY(SimpleRenderSystem);
 
 	public:
-		void renderGameObjects(VkCommandBuffer commandBuffer, std::vector<GameObject>& gameObjects);
+		void renderGameObjects(VkCommandBuffer commandBuffer, std::vector<GameObject>& gameObjects, const Camera& camera);
 
 	private:
 		void createPipelineLayout();

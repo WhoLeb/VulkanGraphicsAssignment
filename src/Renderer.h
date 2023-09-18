@@ -21,6 +21,7 @@ namespace assignment
 
 	public:
 		VkRenderPass getSwapChainRenderPass() const { return swapChain->getRenderPass(); }
+		float getAspectRatio() const { return swapChain->extentAspectRatio(); }
 		bool isFrameInProgress() const { return isFrameStarted; }
 
 		VkCommandBuffer getCurrentCommandBuffer() const {
@@ -51,7 +52,7 @@ namespace assignment
 		std::vector<VkCommandBuffer> commandBuffers;
 
 		uint32_t currentImageIndex;
-		int currentFrameIndex;
+		int currentFrameIndex = 0;
 		bool isFrameStarted = false;
 	};
 }

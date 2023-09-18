@@ -3,15 +3,20 @@
 #include "BaseClassDefines.h"
 #include "Model.h"
 
+#include <glm/gtc/matrix_transform.hpp>
+
 #include <memory>
 
 namespace assignment
 {
-	struct Transform2dComponent
+	struct TransformComponent
 	{
-		glm::vec2 translation{};
-		glm::mat2 mat2() { return glm::mat2(1.f); }
+		glm::vec3 translation{};
+		glm::vec3 scale{};
+		glm::vec3 rotation{}; // Tait-Bryans YXZ
 
+		glm::mat4 mat4();
+		glm::mat3 normalMatrix();
 	};
 
 	class GameObject
@@ -34,7 +39,7 @@ namespace assignment
 
 		std::shared_ptr<Model> model{};
 		glm::vec3 color{};
-		Transform2dComponent transform2d;
+		TransformComponent transform{};
 
 	private:
 		GameObject(id_t objId) : id(objId) {}
