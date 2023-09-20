@@ -43,7 +43,14 @@ namespace assignment
 
 	Application::Application()
 	{
+		globalPool = DescriptorPool::Builder(device)
+			.setMaxSets(SwapChain::MAX_FRAMES_IN_FLIGHT)
+			.addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, SwapChain::MAX_FRAMES_IN_FLIGHT)
+			.addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, SwapChain::MAX_FRAMES_IN_FLIGHT)
+			.build();
 		loadGameObjects();
+		
+		textureImage = std::make_unique<ImageTexture>(device, "assets/textures/viking_room.png");
 	}
 
 	Application::~Application() {}
@@ -63,7 +70,23 @@ namespace assignment
 			uboBuffers[i]->map();
 		}
 
-		SimpleRenderSystem simpleRenderSystem(device, renderer.getSwapChainRenderPass());
+		auto globalSetLayout = DescriptorSetLayout::Builder(device)
+			.addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
+			.addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
+			.build();
+
+		std::vector<VkDescriptorSet> globalDescriptorSets(SwapChain::MAX_FRAMES_IN_FLIGHT);
+		auto descriptor = textureImage->getImageDescriptor();
+		for (int i = 0; i < globalDescriptorSets.size(); i++)
+		{
+			auto bufferInfo = uboBuffers[i]->descriptorInfo();
+			DescriptorWriter(*globalSetLayout, *globalPool)
+				.writeBuffer(0, &bufferInfo)
+				.writeImage(1, &descriptor)
+				.build(globalDescriptorSets[i]);
+		}
+
+		SimpleRenderSystem simpleRenderSystem(device, renderer.getSwapChainRenderPass(), globalSetLayout->getDescriptorSetLayout());
 
 		auto viewerObject = GameObject::createGameObject();
 		KeyboardMovementController cameraController{};
@@ -95,14 +118,15 @@ namespace assignment
 					frameIndex,
 					frameTime,
 					commandBuffer,
-					camera
+					camera,
+					globalDescriptorSets[frameIndex]
 				};
 
 				// update
 				GlobalUbo ubo{};
 				ubo.projectionView = camera.getProjection() * camera.getView();
 				uboBuffers[frameIndex]->writeToBuffer(&ubo);
-				uboBuffers[frameIndex]->flush();
+				uboBuffers[frameIndex]->flush(); 
 
 				// render
 				renderer.beginSwapChainRenderPass(commandBuffer);

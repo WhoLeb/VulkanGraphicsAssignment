@@ -1,9 +1,10 @@
 #pragma once
 
 #include "Device.h"
+#include "Descriptors.h"
 #include "GameObject.h"
-#include "Window.h"
 #include "Renderer.h"
+#include "Window.h"
 
 #include <memory>
 #include <vector>
@@ -33,6 +34,9 @@ namespace assignment
 		Device device{ window };
 		Renderer renderer{ window, device };
 
+		std::unique_ptr<DescriptorPool> globalPool{};
 		std::vector<GameObject> gameObjects;
+
+		std::unique_ptr<ImageTexture> textureImage;
 	};
 }

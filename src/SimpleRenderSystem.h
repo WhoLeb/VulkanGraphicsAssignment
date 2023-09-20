@@ -14,7 +14,7 @@ namespace assignment
 	class SimpleRenderSystem
 	{
 	public:
-		SimpleRenderSystem(Device& device, VkRenderPass renderPass);
+		SimpleRenderSystem(Device& device, VkRenderPass renderPass, VkDescriptorSetLayout globalSetLayout);
 		~SimpleRenderSystem();
 
 		NO_COPY(SimpleRenderSystem);
@@ -23,7 +23,7 @@ namespace assignment
 		void renderGameObjects(FrameInfo& frameInfo, std::vector<GameObject>& gameObjects);
 
 	private:
-		void createPipelineLayout();
+		void createPipelineLayout(VkDescriptorSetLayout globalSetLayout);
 		void createPipeline(VkRenderPass renderPass);
 
 	private:

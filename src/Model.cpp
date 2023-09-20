@@ -4,6 +4,7 @@
 
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny_obj_loader.h>
+
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/hash.hpp>
 
@@ -34,7 +35,7 @@ namespace assignment
 
 	Model::~Model() {}
 
-	std::unique_ptr<Model> Model::createModelFromFile(Device& device, const std::string& filepath)
+	std::unique_ptr<Model> Model::createModelFromFile(Device& device, const std::string& filepath, const std::string& texPath)
 	{
 		Builder builder{};
 		builder.loadModel(filepath);
@@ -207,7 +208,7 @@ namespace assignment
 					vertex.uv =
 					{
 						attrib.texcoords[2 * index.texcoord_index + 0],
-						attrib.texcoords[2 * index.texcoord_index + 1]
+						1.f - attrib.texcoords[2 * index.texcoord_index + 1]
 					};
 				}
 

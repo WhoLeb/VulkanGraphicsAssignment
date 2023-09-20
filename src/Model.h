@@ -2,6 +2,7 @@
 
 #include "Device.h"
 #include "Buffer.h"
+#include "ImageTexture.h"
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -47,7 +48,7 @@ namespace assignment
 		NO_COPY(Model);
 
 	public:
-		static std::unique_ptr<Model> createModelFromFile(Device& device, const std::string& filepath);
+		static std::unique_ptr<Model> createModelFromFile(Device& device, const std::string& filepath, const std::string& texPath = "");
 
 		void bind(VkCommandBuffer commandBuffer);
 		void draw(VkCommandBuffer commandBuffer);
@@ -64,6 +65,7 @@ namespace assignment
 		bool hasIndexBuffer = false;
 		std::unique_ptr<Buffer> indexBuffer;
 		uint32_t indexCount;
+
 	};
 };
 
