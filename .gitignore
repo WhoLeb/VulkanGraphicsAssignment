@@ -8,6 +8,7 @@
 *.sln
 *.spv
 *.sln*
+*.bat
 
 
 # User-specific files
