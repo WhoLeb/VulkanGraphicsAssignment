@@ -20,6 +20,8 @@ namespace assignment
 		vkDestroyImageView(device.device(), textureImageView, nullptr);
 		vkDestroyImage(device.device(), textureImage, nullptr);
 		vkFreeMemory(device.device(), textureImageMemory, nullptr);
+
+		vkDestroySampler(device.device(), textureSampler, nullptr);
 	}
 
 	void ImageTexture::setImageInfo(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage)

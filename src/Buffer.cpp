@@ -62,7 +62,8 @@ namespace assignment
 	VkResult Buffer::flush(VkDeviceSize size, VkDeviceSize offset)
 	{
 		VkMappedMemoryRange mappedRange{};
-		mappedRange.size = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+		mappedRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+		mappedRange.size = size;
 		mappedRange.memory = memory;
 		mappedRange.size = size;
 		mappedRange.offset = offset;

@@ -171,7 +171,7 @@ namespace assignment
 		vertices.clear();
 		indices.clear();
 
-		std::unordered_map<Vertex, uint32_t> uniqueVertices{};
+		std::unordered_map<Vertex, uint32_t> uniqueVertices{}; 
 		for (const auto& shape : shapes)
 		{
 			for (const auto& index : shape.mesh.indices)
