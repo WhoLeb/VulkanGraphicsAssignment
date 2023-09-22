@@ -17,12 +17,12 @@
 <br>
 Шаг 1.
 <p> В Visual studio нажимаем на проект, затем либо 'Alt + enter' либо пкм и в самый низ. </p>
-<img> <img>
+<img src="readme/project.png"> <img src="readme/properties button.png"> 
 
 <br>
 Шаг 2.
 <p> В основном разделе меняем версию плюсов на последнюю (я выбрал 2020, хотя, конечно, есть еще незаконченная 2023). </p>
-<img>
+<img src="readme/c++ standard.png">
 
 <br>
 Шаг 3.
@@ -34,7 +34,7 @@
 <li>D:\dev\vendor\tinyobjloader</li>
 <li>D:\dev\vendor\stb</li>
 </ul>
-<img>
+<img src="readme/additional include directories.png">
 
 <br>
 Шаг 4.
@@ -43,7 +43,7 @@
 <li>D:\dev\includes\glfw-3.3.8.bin.WIN64\lib-vc2022</li>
 <li>C:\VulkanSDK\1.3.250.0\Lib</li>
 </ul>
-<img>
+<img src="readme/additional library directories.png">
 
 <br>
 Шаг 5.
@@ -52,12 +52,12 @@
 <li>vulkan-1.lib</li>
 <li>glfw3.lib</li>
 </ul>
-<img>
+<img src="readme/additional libraries.png">
 
 <br>
 Шаг 6.
 <p> Наконец в разделе с Build events добавляем фигню чтобы каждый раз при билде перекомпилировались шейдеры. </p>
-<img>
+<img src="readme/pre build events.png">
 
 ## Что прикольного можно менять
 Можно менять очень легко проекцию, например. Просто при создании камеры поставить setPerspectiveProjection/setOrthographicProjection. Остальное придумывайте сами, я не знаю что можно поменять настолько же просто.
