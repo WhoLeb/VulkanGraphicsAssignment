@@ -30,7 +30,7 @@ namespace assignment
 		void loadGameObjects();
 
 	private:
-		Window window{ WIDTH, HEIGHT, "Application" };
+		Window window{ WIDTH, HEIGHT, "卐" };
 		Device device{ window };
 		Renderer renderer{ window, device };
 
