@@ -47,7 +47,7 @@ namespace assignment
 
 	void Buffer::writeToBuffer(void* data, VkDeviceSize size, VkDeviceSize offset)
 	{
-		assert(mapped && "Cannot copy t unmapped buffer");
+		assert(mapped && "Cannot copy unmapped buffer");
 
 		if (size == VK_WHOLE_SIZE)
 			memcpy(mapped, data, bufferSize);
@@ -62,7 +62,8 @@ namespace assignment
 	VkResult Buffer::flush(VkDeviceSize size, VkDeviceSize offset)
 	{
 		VkMappedMemoryRange mappedRange{};
-		mappedRange.size = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+		mappedRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+		mappedRange.size = size;
 		mappedRange.memory = memory;
 		mappedRange.size = size;
 		mappedRange.offset = offset;

@@ -16,13 +16,6 @@ namespace assignment
 		NO_COPY(ImageTexture);
 
 	public:
-		void setImageInfo(
-			uint32_t width,
-			uint32_t height,
-			VkFormat format,
-			VkImageTiling tiling,
-			VkImageUsageFlags usage);
-
 		VkDescriptorImageInfo getImageDescriptor();
 
 	private:
@@ -38,8 +31,6 @@ namespace assignment
 		Device& device;
 
 		std::string filepath;
-
-		VkImageCreateInfo imageInfo{};
 
 		VkImage textureImage;
 		VkDeviceMemory textureImageMemory;
