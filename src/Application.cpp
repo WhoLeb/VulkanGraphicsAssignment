@@ -4,41 +4,18 @@
 #include "SimpleRenderSystem.h"
 #include "KeyboardMovementController.h"
 
+#include "glm/gtx/rotate_vector.hpp"
+
 #include <stdexcept>
 #include <chrono>
 #include <array>
-
-namespace
-{
-	void sierpinski(
-		std::vector<assignment::Model::Vertex>& vertices,
-		int depth,
-		glm::vec2 top,
-		glm::vec2 left,
-		glm::vec2 right
-	)
-	{
-		if (depth <= 0)
-		{
-			vertices.push_back({ {top, 0.f}, glm::vec3(0.5f) });
-			vertices.push_back({ {right, 0.f}, glm::vec3(0.5f) });
-			vertices.push_back({ {left, 0.f}, glm::vec3(0.5f) });
-			return;
-		}
-		assignment::Model::Vertex leftTop = { {(left + top) / 2.f, 0.f}, {glm::vec3(0.4f)}};
-		assignment::Model::Vertex rightTop = { {(right + top) / 2.f, 0.f}, {glm::vec3(0.4f)}};
-		assignment::Model::Vertex leftRight = { {(left + right) / 2.f, 0.f}, {glm::vec3(0.4f)}};
-		sierpinski(vertices, depth - 1, left, leftRight.position, leftTop.position);
-		sierpinski(vertices, depth - 1, leftRight.position, right, rightTop.position);
-		sierpinski(vertices, depth - 1, leftTop.position, rightTop.position, top);
-	}
-}
+#include <iostream>
 
 namespace assignment
 {
 	struct GlobalUbo {
 		glm::mat4 projectionView{ 1.f };
-		glm::vec3 lightDirection = glm::normalize(glm::vec3{ 1.f, -3.f, -1.f });
+		glm::vec3 lightDirection = glm::normalize(glm::vec3{ -1.f, -1.f, -1.f });
 	};
 
 	Application::Application()
@@ -92,9 +69,11 @@ namespace assignment
 		KeyboardMovementController cameraController{};
 
 		Camera camera{};
-		camera.setViewDirection(glm::vec3(3.f), glm::vec3(0.0f, 0.f, 1.f));
+		camera.setViewTarget({3.f, -2.f, -3.f}, glm::vec3(0.f));
 
 		auto currentTime = std::chrono::high_resolution_clock::now();
+
+		auto startTime = std::chrono::high_resolution_clock::now();
 
 		while (!window.shouldClose())
 		{
@@ -108,9 +87,10 @@ namespace assignment
 			camera.setViewYXZ(viewerObject.transform.translation, viewerObject.transform.rotation);
 
 			float aspect = renderer.getAspectRatio();
-			camera.setOrthographicProjection(-aspect, -1, -1, aspect, 1, 3);
-			//camera.setPerspecitveProjection(glm::radians(45.f), aspect, 0.1f, 10.f);
+			//camera.setOrthographicProjection(-aspect, -1, -1, aspect, 1, 3);
+			camera.setPerspecitveProjection(glm::radians(45.f), aspect, 0.1f, 10.f);
 
+			GlobalUbo ubo{};
 			if (auto commandBuffer = renderer.beginFrame())
 			{
 				int frameIndex = renderer.getFrameIndex();
@@ -123,8 +103,14 @@ namespace assignment
 				};
 
 				// update
-				GlobalUbo ubo{};
 				ubo.projectionView = camera.getProjection() * camera.getView();
+				//gameObjects[0].transform.rotation = gameObjects[0].transform.rotation + glm::vec3{ 0.f, glm::mod<float>(frameTime * glm::radians(10.f), 360.f), 0.f };
+				ubo.lightDirection = glm::normalize(glm::rotateY(ubo.lightDirection, frameTime * glm::radians(10.f)));
+				if (std::chrono::duration<float, std::chrono::seconds::period>(newTime - startTime).count() > 1.f)
+				{
+					std::cout << ubo.lightDirection.x << " " << ubo.lightDirection.y << " " << ubo.lightDirection.z << "\n";
+					startTime = newTime;
+				}
 				uboBuffers[frameIndex]->writeToBuffer(&ubo);
 				uboBuffers[frameIndex]->flush(); 
 
@@ -161,6 +147,13 @@ namespace assignment
 		axis.transform.rotation = glm::vec3(0.f);
 		gameObjects.push_back(std::move(axis));
 		
+		model = Model::createModelFromFile(device, "assets/meshes/arrow.obj");
+		auto arrow = GameObject::createGameObject();
+		arrow.model = model;
+		arrow.transform.translation = { 2.f, -2.f, 2.f };
+		arrow.transform.scale = glm::vec3(0.3f);
+		
+		gameObjects.push_back(std::move(arrow));
 	}
 
 }

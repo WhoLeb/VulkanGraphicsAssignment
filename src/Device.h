@@ -37,15 +37,16 @@ namespace assignment
 
 		NO_COPY_NO_MOVE(Device);
 
-		VkCommandPool getCommandPool() { return m_commandPool; }
+	public:
+		VkCommandPool getCommandPool() { return commandPool; }
 		VkDevice device() { return m_device; }
 		VkSurfaceKHR surface() { return m_surface; }
 		VkQueue graphicsQueue() { return m_graphicsQueue; }
 		VkQueue presentQueue() { return m_presentQueue; }
 
-		SwapChainSupportDetails getSwapChainSupport() { return querySwapChainSupport(m_physicalDevice); }
+		SwapChainSupportDetails getSwapChainSupport() { return querySwapChainSupport(physicalDevice); }
 		uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
-		QueueFamilyIndices findPhysicalQueueFamilies() { return findQueueFamilies(m_physicalDevice); }
+		QueueFamilyIndices findPhysicalQueueFamilies() { return findQueueFamilies(physicalDevice); }
 		VkFormat findSupportedFormat(
 			const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 
@@ -88,11 +89,12 @@ namespace assignment
 		bool checkDeviceExtensionSupport(VkPhysicalDevice device);
 		SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
 
-		VkInstance m_instance;
-		VkDebugUtilsMessengerEXT m_debugMessenger;
-		VkPhysicalDevice m_physicalDevice = VK_NULL_HANDLE;
-		Window& m_window;
-		VkCommandPool m_commandPool;
+	private:
+		VkInstance instance;
+		VkDebugUtilsMessengerEXT debugMessenger;
+		VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+		Window& window;
+		VkCommandPool commandPool;
 
 		VkDevice m_device;
 		VkSurfaceKHR m_surface;

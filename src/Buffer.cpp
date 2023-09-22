@@ -47,7 +47,7 @@ namespace assignment
 
 	void Buffer::writeToBuffer(void* data, VkDeviceSize size, VkDeviceSize offset)
 	{
-		assert(mapped && "Cannot copy t unmapped buffer");
+		assert(mapped && "Cannot copy unmapped buffer");
 
 		if (size == VK_WHOLE_SIZE)
 			memcpy(mapped, data, bufferSize);
