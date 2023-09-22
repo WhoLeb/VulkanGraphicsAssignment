@@ -74,6 +74,10 @@ namespace assignment
 		auto currentTime = std::chrono::high_resolution_clock::now();
 
 		auto startTime = std::chrono::high_resolution_clock::now();
+		
+		int lightingOption = 0;
+		glm::vec3 lightingOptions[] = { glm::vec3(-1), glm::vec3(1.f, -1.f, -1.f) };
+		auto lastKeystroke = std::chrono::high_resolution_clock::now();
 
 		while (!window.shouldClose())
 		{
@@ -90,7 +94,15 @@ namespace assignment
 			camera.setOrthographicProjection(-aspect, -1, -1, aspect, 1, 30);
 			//camera.setPerspecitveProjection(glm::radians(45.f), aspect, 0.1f, 10.f);
 
+
 			GlobalUbo ubo{};
+			if (std::chrono::duration<float, std::chrono::seconds::period>(currentTime - lastKeystroke).count() > 1.f &&
+				glfwGetKey(window.getGLFWwindow(), GLFW_KEY_SPACE) == GLFW_PRESS)
+			{
+				lightingOption++;
+				lightingOption %= 2;
+				lastKeystroke = std::chrono::high_resolution_clock::now();
+			}
 			if (auto commandBuffer = renderer.beginFrame())
 			{
 				int frameIndex = renderer.getFrameIndex();
@@ -104,6 +116,7 @@ namespace assignment
 
 				// update
 				ubo.projectionView = camera.getProjection() * camera.getView();
+				ubo.lightDirection = lightingOptions[lightingOption];
 				//gameObjects[0].transform.rotation = gameObjects[0].transform.rotation + glm::vec3{ 0.f, glm::mod<float>(frameTime * glm::radians(10.f), 360.f), 0.f };
 				uboBuffers[frameIndex]->writeToBuffer(&ubo);
 				uboBuffers[frameIndex]->flush(); 
