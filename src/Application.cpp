@@ -15,7 +15,7 @@ namespace assignment
 {
 	struct GlobalUbo {
 		glm::mat4 projectionView{ 1.f };
-		glm::vec3 lightDirection = glm::normalize(glm::vec3{ -1.f, -1.f, -1.f });
+		glm::vec3 lightDirection = glm::normalize(glm::vec3{ 1.f, -1.f, -1.f });
 	};
 
 	Application::Application()
@@ -27,7 +27,7 @@ namespace assignment
 			.build();
 		loadGameObjects();
 		
-		textureImage = std::make_unique<ImageTexture>(device, "assets/textures/viking_room.png");
+		textureImage = std::make_unique<ImageTexture>(device, "assets/textures/white.png");
 	}
 
 	Application::~Application() {}
@@ -59,7 +59,7 @@ namespace assignment
 			auto bufferInfo = uboBuffers[i]->descriptorInfo();
 			DescriptorWriter(*globalSetLayout, *globalPool)
 				.writeBuffer(0, &bufferInfo)
-				//.writeImage(1, &descriptor)
+				.writeImage(1, &descriptor)
 				.build(globalDescriptorSets[i]);
 		}
 
@@ -87,8 +87,8 @@ namespace assignment
 			camera.setViewYXZ(viewerObject.transform.translation, viewerObject.transform.rotation);
 
 			float aspect = renderer.getAspectRatio();
-			//camera.setOrthographicProjection(-aspect, -1, -1, aspect, 1, 3);
-			camera.setPerspecitveProjection(glm::radians(45.f), aspect, 0.1f, 10.f);
+			camera.setOrthographicProjection(-aspect, -1, -1, aspect, 1, 30);
+			//camera.setPerspecitveProjection(glm::radians(45.f), aspect, 0.1f, 10.f);
 
 			GlobalUbo ubo{};
 			if (auto commandBuffer = renderer.beginFrame())
@@ -105,12 +105,6 @@ namespace assignment
 				// update
 				ubo.projectionView = camera.getProjection() * camera.getView();
 				//gameObjects[0].transform.rotation = gameObjects[0].transform.rotation + glm::vec3{ 0.f, glm::mod<float>(frameTime * glm::radians(10.f), 360.f), 0.f };
-				ubo.lightDirection = glm::normalize(glm::rotateY(ubo.lightDirection, frameTime * glm::radians(10.f)));
-				if (std::chrono::duration<float, std::chrono::seconds::period>(newTime - startTime).count() > 1.f)
-				{
-					std::cout << ubo.lightDirection.x << " " << ubo.lightDirection.y << " " << ubo.lightDirection.z << "\n";
-					startTime = newTime;
-				}
 				uboBuffers[frameIndex]->writeToBuffer(&ubo);
 				uboBuffers[frameIndex]->flush(); 
 
@@ -131,29 +125,18 @@ namespace assignment
 
 		auto gameObject = GameObject::createGameObject();
 		gameObject.model = model;
-		gameObject.color = { .1f, .1f, .1f };
-		gameObject.transform.translation = { 1.f, -0.2f, 1.f };
-		gameObject.transform.scale = glm::vec3(1.f);
-		gameObject.transform.rotation = { glm::radians(90.f), 0.f, 0.f };
-
+		gameObject.transform.translation = { 0.3f, -0.3f, -0.3f };
+		gameObject.transform.scale = glm::vec3(.3f);
+		gameObject.transform.rotation = { 0.f, 0.f, 0.f };
 		gameObjects.push_back(std::move(gameObject));
 
 		model = Model::createModelFromFile(device, "assets/meshes/axis.obj");
 		auto axis = GameObject::createGameObject();
 		axis.model = model;
-		axis.color = glm::vec3(0.f);
 		axis.transform.translation = glm::vec3(0.f);
 		axis.transform.scale = glm::vec3(1.f);
-		axis.transform.rotation = glm::vec3(0.f);
+		axis.transform.rotation = { glm::radians(90.f), 0.f, 0.f };
 		gameObjects.push_back(std::move(axis));
-		
-		model = Model::createModelFromFile(device, "assets/meshes/arrow.obj");
-		auto arrow = GameObject::createGameObject();
-		arrow.model = model;
-		arrow.transform.translation = { 2.f, -2.f, 2.f };
-		arrow.transform.scale = glm::vec3(0.3f);
-		
-		gameObjects.push_back(std::move(arrow));
 	}
 
 }
