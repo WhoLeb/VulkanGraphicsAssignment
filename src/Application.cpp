@@ -82,7 +82,7 @@ namespace assignment
 			auto bufferInfo = uboBuffers[i]->descriptorInfo();
 			DescriptorWriter(*globalSetLayout, *globalPool)
 				.writeBuffer(0, &bufferInfo)
-				.writeImage(1, &descriptor)
+				//.writeImage(1, &descriptor)
 				.build(globalDescriptorSets[i]);
 		}
 
@@ -92,7 +92,7 @@ namespace assignment
 		KeyboardMovementController cameraController{};
 
 		Camera camera{};
-		camera.setViewDirection(glm::vec3(0.f), glm::vec3(0.5f, 0.f, 1.f));
+		camera.setViewDirection(glm::vec3(3.f), glm::vec3(0.0f, 0.f, 1.f));
 
 		auto currentTime = std::chrono::high_resolution_clock::now();
 
@@ -108,8 +108,8 @@ namespace assignment
 			camera.setViewYXZ(viewerObject.transform.translation, viewerObject.transform.rotation);
 
 			float aspect = renderer.getAspectRatio();
-			//camera.setOrthographicProjection(-aspect, -1, -1, aspect, 1, 3);
-			camera.setPerspecitveProjection(glm::radians(45.f), aspect, 0.1f, 10.f);
+			camera.setOrthographicProjection(-aspect, -1, -1, aspect, 1, 3);
+			//camera.setPerspecitveProjection(glm::radians(45.f), aspect, 0.1f, 10.f);
 
 			if (auto commandBuffer = renderer.beginFrame())
 			{
@@ -141,16 +141,26 @@ namespace assignment
 
 	void Application::loadGameObjects()
 	{
-		std::shared_ptr<Model> model = Model::createModelFromFile(device, "assets/meshes/viking_room.obj");
+		std::shared_ptr<Model> model = Model::createModelFromFile(device, "assets/meshes/my_cube.obj");
 
 		auto gameObject = GameObject::createGameObject();
 		gameObject.model = model;
 		gameObject.color = { .1f, .1f, .1f };
-		gameObject.transform.translation = { 0.f, .0f, 1.5f };
-		gameObject.transform.scale = glm::vec3(0.5f);
+		gameObject.transform.translation = { 1.f, -0.2f, 1.f };
+		gameObject.transform.scale = glm::vec3(1.f);
 		gameObject.transform.rotation = { glm::radians(90.f), 0.f, 0.f };
 
 		gameObjects.push_back(std::move(gameObject));
+
+		model = Model::createModelFromFile(device, "assets/meshes/axis.obj");
+		auto axis = GameObject::createGameObject();
+		axis.model = model;
+		axis.color = glm::vec3(0.f);
+		axis.transform.translation = glm::vec3(0.f);
+		axis.transform.scale = glm::vec3(1.f);
+		axis.transform.rotation = glm::vec3(0.f);
+		gameObjects.push_back(std::move(axis));
+		
 	}
 
 }
