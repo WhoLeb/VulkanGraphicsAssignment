@@ -4,9 +4,9 @@
 <br>
 Итак, для начала вам понадобится установить себе некоторые библиотеки, а именно 
 <ul>
-    <li>GLFW https://www.glfw.org/download - создание окна</li>
+    <li>GLFW https://www.glfw.org/download - создание окна вам нужны скомпилированные бинарники </li>
     <li>glm https://github.com/g-truc/glm.git - мотематика</li>
-    <li>VulkanSDK https://vulkan.lunarg.com/ - Вулкан(графический API)</li>
+    <li>VulkanSDK https://vulkan.lunarg.com/ - Вулкан(графический API) качаем с инстоллера </li>
     <li>tinyobjloader https://github.com/tinyobjloader/tinyobjloader.git - однофайловая ютилити для загрузки моделей</li>
     <li>stb https://github.com/nothings/stb.git - однофайловая ютилити для загрузки текстур из картинок(png)</li>
 </ul>
