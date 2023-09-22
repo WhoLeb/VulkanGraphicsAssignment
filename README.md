@@ -18,7 +18,7 @@
 <br>
 Шаг 1.
 <p> В Visual studio нажимаем на проект, затем либо 'Alt + enter' либо пкм и в самый низ. </p>
-<img src="readme/project.png"> <img src="readme/properties button.png"> 
+<div style="display:flex;flex-direction:row;"><img src="readme/project.png"> <img src="readme/properties button.png"></div>
 
 <br>
 Шаг 2.
