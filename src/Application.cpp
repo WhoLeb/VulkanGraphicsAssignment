@@ -77,6 +77,20 @@ namespace assignment
 		
 		int lightingOption = 0;
 		glm::vec3 lightingOptions[] = { glm::vec3(-1), glm::vec3(1.f, -1.f, -1.f) };
+
+		int dimetricOption = 0;
+		std::vector<float> dimetricOptions = { 0, 1.f / 4.f, 3.f / 8.f, 0.5f, 5.f / 8.f, 3.f / 4.f, 1.f };
+
+		bool isometric = false;
+		int isometricOption = 0;
+		std::vector<std::pair<float, float>> isometricOptions =
+		{
+			{glm::radians(-45.f), glm::radians(35.26f)}, 
+			{glm::radians(-45.f), glm::radians(-35.26f)}, 
+			{glm::radians(45.f), glm::radians(35.26f)}, 
+			{glm::radians(45.f), glm::radians(-35.26f)} 
+		};
+
 		auto lastKeystroke = std::chrono::high_resolution_clock::now();
 
 		while (!window.shouldClose())
@@ -94,15 +108,50 @@ namespace assignment
 			camera.setOrthographicProjection(-aspect, -1, -1, aspect, 1, 30);
 			//camera.setPerspecitveProjection(glm::radians(45.f), aspect, 0.1f, 10.f);
 
-
 			GlobalUbo ubo{};
-			if (std::chrono::duration<float, std::chrono::seconds::period>(currentTime - lastKeystroke).count() > 1.f &&
+
+			auto keysAvailable = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - lastKeystroke).count() > .1f;
+			if (keysAvailable&&
 				glfwGetKey(window.getGLFWwindow(), GLFW_KEY_SPACE) == GLFW_PRESS)
 			{
 				lightingOption++;
 				lightingOption %= 2;
 				lastKeystroke = std::chrono::high_resolution_clock::now();
 			}
+			if (keysAvailable&&
+				glfwGetKey(window.getGLFWwindow(), GLFW_KEY_L) == GLFW_PRESS)
+			{
+				dimetricOption++;
+				isometric = false;
+				dimetricOption %= dimetricOptions.size();
+				lastKeystroke = std::chrono::high_resolution_clock::now();
+			}
+			if (keysAvailable&&
+				glfwGetKey(window.getGLFWwindow(), GLFW_KEY_J) == GLFW_PRESS)
+			{
+				dimetricOption--;
+				isometric = false;
+				dimetricOption %= dimetricOptions.size();
+				lastKeystroke = std::chrono::high_resolution_clock::now();
+			}
+			if (keysAvailable&&
+				glfwGetKey(window.getGLFWwindow(), GLFW_KEY_I) == GLFW_PRESS)
+			{
+				isometric = true;
+				isometricOption++;
+				isometricOption %= isometricOptions.size();
+				lastKeystroke = std::chrono::high_resolution_clock::now();
+			}
+			if (keysAvailable&&
+				glfwGetKey(window.getGLFWwindow(), GLFW_KEY_K) == GLFW_PRESS)
+			{
+				isometric = true;
+				isometricOption--;
+				isometricOption %= isometricOptions.size();
+				lastKeystroke = std::chrono::high_resolution_clock::now();
+			}
+			if (glfwGetKey(window.getGLFWwindow(), GLFW_KEY_LEFT | GLFW_KEY_RIGHT | GLFW_KEY_UP | GLFW_KEY_DOWN) == GLFW_PRESS)
+				isometric = false;
 			if (auto commandBuffer = renderer.beginFrame())
 			{
 				int frameIndex = renderer.getFrameIndex();
@@ -118,6 +167,15 @@ namespace assignment
 				ubo.projectionView = camera.getProjection() * camera.getView();
 				ubo.lightDirection = lightingOptions[lightingOption];
 				//gameObjects[0].transform.rotation = gameObjects[0].transform.rotation + glm::vec3{ 0.f, glm::mod<float>(frameTime * glm::radians(10.f), 360.f), 0.f };
+				if (!isometric)
+				{
+					gameObjects[0].transform.rotation.x = glm::asin(dimetricOptions[dimetricOption] / glm::sqrt(2));
+					gameObjects[0].transform.rotation.y = glm::asin(dimetricOptions[dimetricOption] / glm::sqrt(2 - glm::pow(dimetricOptions[dimetricOption], 2)));
+				} else {
+					gameObjects[0].transform.rotation.y = isometricOptions[isometricOption].first;
+					gameObjects[0].transform.rotation.x = isometricOptions[isometricOption].second;
+				}
+
 				uboBuffers[frameIndex]->writeToBuffer(&ubo);
 				uboBuffers[frameIndex]->flush(); 
 
@@ -143,13 +201,13 @@ namespace assignment
 		gameObject.transform.rotation = { 0.f, 0.f, 0.f };
 		gameObjects.push_back(std::move(gameObject));
 
-		model = Model::createModelFromFile(device, "assets/meshes/axis.obj");
-		auto axis = GameObject::createGameObject();
-		axis.model = model;
-		axis.transform.translation = glm::vec3(0.f);
-		axis.transform.scale = glm::vec3(1.f);
-		axis.transform.rotation = { glm::radians(90.f), 0.f, 0.f };
-		gameObjects.push_back(std::move(axis));
+		//model = Model::createModelFromFile(device, "assets/meshes/axis.obj");
+		//auto axis = GameObject::createGameObject();
+		//axis.model = model;
+		//axis.transform.translation = glm::vec3(0.f);
+		//axis.transform.scale = glm::vec3(1.f);
+		//axis.transform.rotation = { glm::radians(90.f), 0.f, 0.f };
+		//gameObjects.push_back(std::move(axis));
 	}
 
 }
