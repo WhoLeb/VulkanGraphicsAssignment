@@ -79,16 +79,15 @@ namespace assignment
 		glm::vec3 lightingOptions[] = { glm::vec3(-1), glm::vec3(1.f, -1.f, -1.f) };
 
 		int dimetricOption = 0;
-		std::vector<float> dimetricOptions = { 0, 1.f / 4.f, 3.f / 8.f, 0.5f, 5.f / 8.f, 3.f / 4.f, 1.f };
+		std::vector<float> dimetricOptions = { 0, 1.f / 4.f, 3.f / 8.f, 0.5f, 5.f / 8.f, 3.f / 4.f, 0.8165f, 1.f };
 
-		bool isometric = false;
-		int isometricOption = 0;
-		std::vector<std::pair<float, float>> isometricOptions =
+		int angleOption = 0;
+		std::vector<std::pair<float, float>> angleOptions =
 		{
-			{glm::radians(-45.f), glm::radians(35.26f)}, 
-			{glm::radians(-45.f), glm::radians(-35.26f)}, 
-			{glm::radians(45.f), glm::radians(35.26f)}, 
-			{glm::radians(45.f), glm::radians(-35.26f)} 
+			{ -1, 1}, 
+			{ -1, -1}, 
+			{ 1, 1}, 
+			{ 1, -1} 
 		};
 
 		auto lastKeystroke = std::chrono::high_resolution_clock::now();
@@ -110,7 +109,7 @@ namespace assignment
 
 			GlobalUbo ubo{};
 
-			auto keysAvailable = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - lastKeystroke).count() > .1f;
+			auto keysAvailable = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - lastKeystroke).count() > .15f;
 			if (keysAvailable&&
 				glfwGetKey(window.getGLFWwindow(), GLFW_KEY_SPACE) == GLFW_PRESS)
 			{
@@ -122,7 +121,6 @@ namespace assignment
 				glfwGetKey(window.getGLFWwindow(), GLFW_KEY_L) == GLFW_PRESS)
 			{
 				dimetricOption++;
-				isometric = false;
 				dimetricOption %= dimetricOptions.size();
 				lastKeystroke = std::chrono::high_resolution_clock::now();
 			}
@@ -130,28 +128,37 @@ namespace assignment
 				glfwGetKey(window.getGLFWwindow(), GLFW_KEY_J) == GLFW_PRESS)
 			{
 				dimetricOption--;
-				isometric = false;
 				dimetricOption %= dimetricOptions.size();
 				lastKeystroke = std::chrono::high_resolution_clock::now();
 			}
 			if (keysAvailable&&
 				glfwGetKey(window.getGLFWwindow(), GLFW_KEY_I) == GLFW_PRESS)
 			{
-				isometric = true;
-				isometricOption++;
-				isometricOption %= isometricOptions.size();
+				angleOption++;
+				angleOption %= angleOptions.size();
 				lastKeystroke = std::chrono::high_resolution_clock::now();
 			}
 			if (keysAvailable&&
 				glfwGetKey(window.getGLFWwindow(), GLFW_KEY_K) == GLFW_PRESS)
 			{
-				isometric = true;
-				isometricOption--;
-				isometricOption %= isometricOptions.size();
+				angleOption--;
+				angleOption %= angleOptions.size();
 				lastKeystroke = std::chrono::high_resolution_clock::now();
 			}
-			if (glfwGetKey(window.getGLFWwindow(), GLFW_KEY_LEFT | GLFW_KEY_RIGHT | GLFW_KEY_UP | GLFW_KEY_DOWN) == GLFW_PRESS)
-				isometric = false;
+			if (keysAvailable&&
+				glfwGetKey(window.getGLFWwindow(), GLFW_KEY_O) == GLFW_PRESS)
+			{
+				viewerObject.transform.translation = { 0.f, 0.f, 0.f };
+				viewerObject.transform.rotation = { 0.f, 0.f, 0.f };
+				lastKeystroke = std::chrono::high_resolution_clock::now();
+			}
+			if (keysAvailable&&
+				glfwGetKey(window.getGLFWwindow(), GLFW_KEY_U) == GLFW_PRESS)
+			{
+				dimetricOption = dimetricOptions.size() - 2;
+				lastKeystroke = std::chrono::high_resolution_clock::now();
+			}
+
 			if (auto commandBuffer = renderer.beginFrame())
 			{
 				int frameIndex = renderer.getFrameIndex();
@@ -167,14 +174,8 @@ namespace assignment
 				ubo.projectionView = camera.getProjection() * camera.getView();
 				ubo.lightDirection = lightingOptions[lightingOption];
 				//gameObjects[0].transform.rotation = gameObjects[0].transform.rotation + glm::vec3{ 0.f, glm::mod<float>(frameTime * glm::radians(10.f), 360.f), 0.f };
-				if (!isometric)
-				{
-					gameObjects[0].transform.rotation.x = glm::asin(dimetricOptions[dimetricOption] / glm::sqrt(2));
-					gameObjects[0].transform.rotation.y = glm::asin(dimetricOptions[dimetricOption] / glm::sqrt(2 - glm::pow(dimetricOptions[dimetricOption], 2)));
-				} else {
-					gameObjects[0].transform.rotation.y = isometricOptions[isometricOption].first;
-					gameObjects[0].transform.rotation.x = isometricOptions[isometricOption].second;
-				}
+				gameObjects[0].transform.rotation.x = angleOptions[angleOption].first * glm::asin(dimetricOptions[dimetricOption] / glm::sqrt(2));
+				gameObjects[0].transform.rotation.y = angleOptions[angleOption].second * glm::asin(dimetricOptions[dimetricOption] / glm::sqrt(2 - glm::pow(dimetricOptions[dimetricOption], 2)));
 
 				uboBuffers[frameIndex]->writeToBuffer(&ubo);
 				uboBuffers[frameIndex]->flush(); 
@@ -192,7 +193,7 @@ namespace assignment
 
 	void Application::loadGameObjects()
 	{
-		std::shared_ptr<Model> model = Model::createModelFromFile(device, "assets/meshes/my_cube.obj");
+		std::shared_ptr<Model> model = Model::createModelFromFile(device, "assets/meshes/stairs.obj");
 
 		auto gameObject = GameObject::createGameObject();
 		gameObject.model = model;

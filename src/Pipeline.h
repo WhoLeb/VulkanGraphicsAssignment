@@ -15,7 +15,7 @@ namespace assignment
 
 		VkPipelineViewportStateCreateInfo		viewportInfo;
 		VkPipelineInputAssemblyStateCreateInfo	inputAssemblyInfo;
-		VkPipelineRasterizationStateCreateInfo	rasterizationInfo;
+		VkPipelineRasterizationStateCreateInfo	rasterizationInfo; 
 		VkPipelineMultisampleStateCreateInfo	multisampleInfo;
 		VkPipelineColorBlendAttachmentState		colorBlendAttachment;
 		VkPipelineColorBlendStateCreateInfo		colorBlendInfo;
