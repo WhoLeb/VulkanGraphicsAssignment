@@ -84,11 +84,13 @@ namespace assignment
 		int angleOption = 0;
 		std::vector<std::pair<float, float>> angleOptions =
 		{
-			{ -1, 1}, 
-			{ -1, -1}, 
-			{ 1, 1}, 
-			{ 1, -1} 
+			{ -1, 1 }, 
+			{ -1, -1 }, 
+			{ 1, 1 }, 
+			{ 1, -1 } 
 		};
+
+		bool boundCamera = false;
 
 		auto lastKeystroke = std::chrono::high_resolution_clock::now();
 
@@ -108,57 +110,64 @@ namespace assignment
 			//camera.setPerspecitveProjection(glm::radians(45.f), aspect, 0.1f, 10.f);
 
 			GlobalUbo ubo{};
+			{
+				auto keysAvailable = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - lastKeystroke).count() > .15f;
+				if (keysAvailable &&
+					glfwGetKey(window.getGLFWwindow(), GLFW_KEY_SPACE) == GLFW_PRESS)
+				{
+					lightingOption++;
+					lightingOption %= 2;
+					lastKeystroke = std::chrono::high_resolution_clock::now();
+				}
+				if (keysAvailable &&
+					glfwGetKey(window.getGLFWwindow(), GLFW_KEY_L) == GLFW_PRESS)
+				{
+					dimetricOption++;
+					dimetricOption %= dimetricOptions.size();
+					lastKeystroke = std::chrono::high_resolution_clock::now();
+					boundCamera = true;
+				}
+				if (keysAvailable &&
+					glfwGetKey(window.getGLFWwindow(), GLFW_KEY_J) == GLFW_PRESS)
+				{
+					dimetricOption--;
+					dimetricOption %= dimetricOptions.size();
+					lastKeystroke = std::chrono::high_resolution_clock::now();
+					boundCamera = true;
+				}
+				if (keysAvailable &&
+					glfwGetKey(window.getGLFWwindow(), GLFW_KEY_I) == GLFW_PRESS)
+				{
+					angleOption++;
+					angleOption %= angleOptions.size();
+					lastKeystroke = std::chrono::high_resolution_clock::now();
+					boundCamera = true;
+				}
+				if (keysAvailable &&
+					glfwGetKey(window.getGLFWwindow(), GLFW_KEY_K) == GLFW_PRESS)
+				{
+					angleOption--;
+					angleOption %= angleOptions.size();
+					lastKeystroke = std::chrono::high_resolution_clock::now();
+					boundCamera = true;
+				}
+				if (keysAvailable &&
+					glfwGetKey(window.getGLFWwindow(), GLFW_KEY_O) == GLFW_PRESS)
+				{
+					viewerObject.transform.translation = { 0.f, 0.f, 0.f };
+					viewerObject.transform.rotation = { 0.f, 0.f, 0.f };
+					lastKeystroke = std::chrono::high_resolution_clock::now();
+					boundCamera = true;
+				}
+				if (keysAvailable &&
+					glfwGetKey(window.getGLFWwindow(), GLFW_KEY_U) == GLFW_PRESS)
+				{
+					dimetricOption = dimetricOptions.size() - 2;
+					lastKeystroke = std::chrono::high_resolution_clock::now();
+					boundCamera = true;
+				}
 
-			auto keysAvailable = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - lastKeystroke).count() > .15f;
-			if (keysAvailable&&
-				glfwGetKey(window.getGLFWwindow(), GLFW_KEY_SPACE) == GLFW_PRESS)
-			{
-				lightingOption++;
-				lightingOption %= 2;
-				lastKeystroke = std::chrono::high_resolution_clock::now();
 			}
-			if (keysAvailable&&
-				glfwGetKey(window.getGLFWwindow(), GLFW_KEY_L) == GLFW_PRESS)
-			{
-				dimetricOption++;
-				dimetricOption %= dimetricOptions.size();
-				lastKeystroke = std::chrono::high_resolution_clock::now();
-			}
-			if (keysAvailable&&
-				glfwGetKey(window.getGLFWwindow(), GLFW_KEY_J) == GLFW_PRESS)
-			{
-				dimetricOption--;
-				dimetricOption %= dimetricOptions.size();
-				lastKeystroke = std::chrono::high_resolution_clock::now();
-			}
-			if (keysAvailable&&
-				glfwGetKey(window.getGLFWwindow(), GLFW_KEY_I) == GLFW_PRESS)
-			{
-				angleOption++;
-				angleOption %= angleOptions.size();
-				lastKeystroke = std::chrono::high_resolution_clock::now();
-			}
-			if (keysAvailable&&
-				glfwGetKey(window.getGLFWwindow(), GLFW_KEY_K) == GLFW_PRESS)
-			{
-				angleOption--;
-				angleOption %= angleOptions.size();
-				lastKeystroke = std::chrono::high_resolution_clock::now();
-			}
-			if (keysAvailable&&
-				glfwGetKey(window.getGLFWwindow(), GLFW_KEY_O) == GLFW_PRESS)
-			{
-				viewerObject.transform.translation = { 0.f, 0.f, 0.f };
-				viewerObject.transform.rotation = { 0.f, 0.f, 0.f };
-				lastKeystroke = std::chrono::high_resolution_clock::now();
-			}
-			if (keysAvailable&&
-				glfwGetKey(window.getGLFWwindow(), GLFW_KEY_U) == GLFW_PRESS)
-			{
-				dimetricOption = dimetricOptions.size() - 2;
-				lastKeystroke = std::chrono::high_resolution_clock::now();
-			}
-
 			if (auto commandBuffer = renderer.beginFrame())
 			{
 				int frameIndex = renderer.getFrameIndex();
@@ -170,12 +179,22 @@ namespace assignment
 					globalDescriptorSets[frameIndex]
 				};
 
-				// update
+				// Установлении проекции камеры, направления света
 				ubo.projectionView = camera.getProjection() * camera.getView();
 				ubo.lightDirection = lightingOptions[lightingOption];
-				//gameObjects[0].transform.rotation = gameObjects[0].transform.rotation + glm::vec3{ 0.f, glm::mod<float>(frameTime * glm::radians(10.f), 360.f), 0.f };
-				gameObjects[0].transform.rotation.x = angleOptions[angleOption].first * glm::asin(dimetricOptions[dimetricOption] / glm::sqrt(2));
-				gameObjects[0].transform.rotation.y = angleOptions[angleOption].second * glm::asin(dimetricOptions[dimetricOption] / glm::sqrt(2 - glm::pow(dimetricOptions[dimetricOption], 2)));
+
+				// Изменение поворота
+				if (boundCamera)
+				{
+					viewerObject.transform.rotation.x =
+						angleOptions[angleOption].first *
+						glm::asin(dimetricOptions[dimetricOption] / glm::sqrt(2));
+					viewerObject.transform.rotation.y =
+						angleOptions[angleOption].second *
+						glm::asin(dimetricOptions[dimetricOption] / glm::sqrt(2 - glm::pow(dimetricOptions[dimetricOption], 2)));
+					boundCamera = false;
+				}
+				//gameObjects[0].transform.rotation.y += glm::radians(15.f) * frameTime;
 
 				uboBuffers[frameIndex]->writeToBuffer(&ubo);
 				uboBuffers[frameIndex]->flush(); 
@@ -193,7 +212,7 @@ namespace assignment
 
 	void Application::loadGameObjects()
 	{
-		std::shared_ptr<Model> model = Model::createModelFromFile(device, "assets/meshes/stairs.obj");
+		std::shared_ptr<Model> model = Model::createModelFromFile(device, "assets/meshes/my_cube.obj");
 
 		auto gameObject = GameObject::createGameObject();
 		gameObject.model = model;
@@ -202,13 +221,13 @@ namespace assignment
 		gameObject.transform.rotation = { 0.f, 0.f, 0.f };
 		gameObjects.push_back(std::move(gameObject));
 
-		//model = Model::createModelFromFile(device, "assets/meshes/axis.obj");
-		//auto axis = GameObject::createGameObject();
-		//axis.model = model;
-		//axis.transform.translation = glm::vec3(0.f);
-		//axis.transform.scale = glm::vec3(1.f);
-		//axis.transform.rotation = { glm::radians(90.f), 0.f, 0.f };
-		//gameObjects.push_back(std::move(axis));
+		model = Model::createModelFromFile(device, "assets/meshes/axis.obj");
+		auto axis = GameObject::createGameObject();
+		axis.model = model;
+		axis.transform.translation = glm::vec3(0.f);
+		axis.transform.scale = glm::vec3(1.f);
+		axis.transform.rotation = { glm::radians(90.f), 0.f, 0.f };
+		gameObjects.push_back(std::move(axis));
 	}
 
 }
