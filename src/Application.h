@@ -36,6 +36,7 @@ namespace assignment
 
 		std::unique_ptr<DescriptorPool> globalPool{};
 		std::vector<GameObject> gameObjects;
+		std::vector<GameObject> splineObjects;
 
 		std::unique_ptr<ImageTexture> textureImage;
 	};

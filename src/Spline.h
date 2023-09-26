@@ -13,7 +13,7 @@
 
 namespace assignment
 {
-	class Model
+	class Spline
 	{
 	public:
 		struct Vertex {
@@ -29,43 +29,28 @@ namespace assignment
 			{
 				return position == other.position &&
 					color == other.color &&
-					normal == other.normal &&
-					uv == other.uv;
+					normal == other.normal;
 			}
 		};
 
-		struct Builder
-		{
-			std::vector<Vertex> vertices{};
-			std::vector<uint32_t> indices{};
+		Spline(Device& device, const std::vector<Vertex>& builder);
+		~Spline();
 
-			void loadModel(const std::string& filename);
-		};
-
-		Model(Device& device, const Model::Builder& builder);
-		~Model();
-
-		NO_COPY(Model);
+		NO_COPY(Spline);
 
 	public:
-		static std::unique_ptr<Model> createModelFromFile(Device& device, const std::string& filepath);
-		static std::unique_ptr<Model> createModelFromVector(Device& device, const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices);
+		static std::unique_ptr<Spline> createSplineFromVector(Device& device, const std::vector<Vertex>& vertices);
 
 		void bind(VkCommandBuffer commandBuffer);
 		void draw(VkCommandBuffer commandBuffer);
 
 		void createVertexBuffers(const std::vector<Vertex>& vertices);
-		void createIndexBuffers(const std::vector<uint32_t>& indices);
 
 	private:
 		Device& device;
 
 		std::unique_ptr<Buffer> vertexBuffer;
 		uint32_t vertexCount;
-
-		bool hasIndexBuffer = false;
-		std::unique_ptr<Buffer> indexBuffer;
-		uint32_t indexCount;
 	};
-};
 
+}

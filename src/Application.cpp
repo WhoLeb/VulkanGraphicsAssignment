@@ -2,7 +2,10 @@
 
 #include "Camera.h"
 #include "SimpleRenderSystem.h"
+#include "SplineRenderSystem.h"
+#include "Spline.h"
 #include "KeyboardMovementController.h"
+#include "Model.h"
 
 #include "glm/gtx/rotate_vector.hpp"
 
@@ -10,6 +13,20 @@
 #include <chrono>
 #include <array>
 #include <iostream>
+
+namespace
+{
+	void subdivide(std::vector<assignment::Spline::Vertex>& vertices, uint32_t left, uint32_t right, uint32_t subdivision)
+	{
+		if (subdivision == 0 || left == right)
+			return;
+		vertices.insert(vertices.begin() + left + 1, assignment::Spline::Vertex{
+			((vertices.begin() + left)->position + (vertices.begin() + right)->position)/2.f,
+			glm::vec3(1.f, 0.f, 0.f) });
+		subdivide(vertices, 0, left, subdivision - 1);
+		//subdivide(vertices, , , subdivision - 1);
+	}
+}
 
 namespace assignment
 {
@@ -64,8 +81,9 @@ namespace assignment
 		}
 
 		SimpleRenderSystem simpleRenderSystem(device, renderer.getSwapChainRenderPass(), globalSetLayout->getDescriptorSetLayout());
+		SplineRenderSystem splineRenderSystem(device, renderer.getSwapChainRenderPass(), globalSetLayout->getDescriptorSetLayout());
 
-		auto viewerObject = GameObject::createGameObject();
+		auto viewerObject = GameObject::createGameObject(); 
 		KeyboardMovementController cameraController{};
 
 		Camera camera{};
@@ -106,8 +124,8 @@ namespace assignment
 			camera.setViewYXZ(viewerObject.transform.translation, viewerObject.transform.rotation);
 
 			float aspect = renderer.getAspectRatio();
-			camera.setOrthographicProjection(-aspect, -1, -1, aspect, 1, 30);
-			//camera.setPerspecitveProjection(glm::radians(45.f), aspect, 0.1f, 10.f);
+			//camera.setOrthographicProjection(-aspect, -1, -1, aspect, 1, 30);
+			camera.setPerspecitveProjection(glm::radians(45.f), aspect, 0.1f, 10.f);
 
 			GlobalUbo ubo{};
 			{
@@ -202,6 +220,7 @@ namespace assignment
 				// render
 				renderer.beginSwapChainRenderPass(commandBuffer);
 				simpleRenderSystem.renderGameObjects(frameInfo, gameObjects);
+				splineRenderSystem.renderSplineObjects(frameInfo, splineObjects);
 				renderer.endSwapChainRenderPass(commandBuffer);
 				renderer.endFrame();
 			}
@@ -214,20 +233,73 @@ namespace assignment
 	{
 		std::shared_ptr<Model> model = Model::createModelFromFile(device, "assets/meshes/my_cube.obj");
 
-		auto gameObject = GameObject::createGameObject();
-		gameObject.model = model;
-		gameObject.transform.translation = { 0.3f, -0.3f, -0.3f };
-		gameObject.transform.scale = glm::vec3(.3f);
-		gameObject.transform.rotation = { 0.f, 0.f, 0.f };
-		gameObjects.push_back(std::move(gameObject));
+		Spline::Vertex v1{};
+		v1.position = { 0.f, 0.f, 0.f };
+		v1.color = glm::vec3(1.f);
+		Spline::Vertex v2{};
+		v2.position = { 1.f, 1.f, 1.f };
+		v2.color = glm::vec3(1.f);
+		Spline::Vertex v3{};
+		v3.position = { 1.f, 2.f, 2.f };
+		v3.color = glm::vec3(1.f);
+		Spline::Vertex v4{};
+		v4.position = { 2.f, 2.f, 2.f };
+		v4.color = glm::vec3(1.f);
+		Spline::Vertex v5{};
+		v5.position = { 1.f, 2.f, 4.f };
+		v5.color = glm::vec3(1.f);
+		std::vector<Spline::Vertex> vertices = { v1, v2, v3, v4, v5 };
+		for (int i = 0, j = vertices.size(); i < j - 1; i++)
+		{
+			subdivide(vertices, i*2, (i + 1)*2, 2);
+		}
 
-		model = Model::createModelFromFile(device, "assets/meshes/axis.obj");
+		std::shared_ptr<Spline> spline = Spline::createSplineFromVector(device, vertices);
+		auto gameObject = GameObject::createGameObject();
+		gameObject.spline = spline;
+		gameObject.transform.translation = { 0.f, 0.f, 0.f };
+		gameObject.transform.scale = glm::vec3(0.3f);
+		gameObject.transform.rotation = { 0.f, 0.f, 0.f };
+		splineObjects.push_back(std::move(gameObject));
+
+		v1.position = { -1000.f, 0.f, 0.f };
+		v1.color = { 1.f, 0.f, 0.f };
+		v2.position = { 1000.f, 0.f, 0.f };
+		v2.color = { 1.f, 0.f, 0.f };
+		std::vector<Spline::Vertex> axisLine = { v1, v2 };
+
 		auto axis = GameObject::createGameObject();
-		axis.model = model;
+		axis.spline = Spline::createSplineFromVector(device, axisLine);
 		axis.transform.translation = glm::vec3(0.f);
 		axis.transform.scale = glm::vec3(1.f);
-		axis.transform.rotation = { glm::radians(90.f), 0.f, 0.f };
-		gameObjects.push_back(std::move(axis));
+		axis.transform.rotation = { 0.f, 0.f, 0.f };
+		splineObjects.push_back(std::move(axis));
+
+		v1.position = { 0.f,  -1000.f, 0.f };
+		v1.color = { 0.f, 1.f, 0.f };
+		v2.position = { 0.f,  1000.f, 0.f };
+		v2.color = { 0.f, 1.f, 0.f };
+		axisLine = { v1, v2 };
+
+		axis = GameObject::createGameObject();
+		axis.spline = Spline::createSplineFromVector(device, axisLine);
+		axis.transform.translation = glm::vec3(0.f);
+		axis.transform.scale = glm::vec3(1.f);
+		axis.transform.rotation = { 0.f, 0.f, 0.f };
+		splineObjects.push_back(std::move(axis));
+
+		v1.position = { 0.f, 0.f,  -1000.f };
+		v1.color = { 0.f, 0.f, 1.f };
+		v2.position = { 0.f, 0.f, 1000.f };
+		v2.color = { 0.f, 0.f, 1.f };
+		axisLine = { v1, v2 };
+
+		axis = GameObject::createGameObject();
+		axis.spline = Spline::createSplineFromVector(device, axisLine);
+		axis.transform.translation = glm::vec3(0.f);
+		axis.transform.scale = glm::vec3(1.f);
+		axis.transform.rotation = { 0.f, 0.f, 0.f };
+		splineObjects.push_back(std::move(axis));
 	}
 
 }

@@ -35,10 +35,19 @@ namespace assignment
 
 	Model::~Model() {}
 
-	std::unique_ptr<Model> Model::createModelFromFile(Device& device, const std::string& filepath, const std::string& texPath)
+	std::unique_ptr<Model> Model::createModelFromFile(Device& device, const std::string& filepath)
 	{
 		Builder builder{};
 		builder.loadModel(filepath);
+
+		return std::make_unique<Model>(device, builder);
+	}
+
+	std::unique_ptr<Model> Model::createModelFromVector(Device& device, const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices)
+	{
+		Builder builder{};
+		builder.vertices = vertices;
+		builder.indices = indices;
 
 		return std::make_unique<Model>(device, builder);
 	}
