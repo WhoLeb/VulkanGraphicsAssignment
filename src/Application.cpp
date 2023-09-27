@@ -8,23 +8,178 @@
 #include "Model.h"
 
 #include "glm/gtx/rotate_vector.hpp"
+#include <Eigen/Dense>
 
 #include <stdexcept>
 #include <chrono>
 #include <array>
 #include <iostream>
 
-namespace
+namespace special
 {
-	void subdivide(std::vector<assignment::Spline::Vertex>& vertices, uint32_t left, uint32_t right, uint32_t subdivision)
+	void calculateTs(const std::vector<assignment::Spline::Vertex>& vertices, std::vector<float>& t);
+	Eigen::Matrix4f splineSegmentMatrix(const std::vector<float>& t, uint64_t k);
+	Eigen::MatrixXf RMatrix(const Eigen::MatrixXf& vertices, const std::vector<float>& t, const Eigen::Vector3f& P1, const Eigen::Vector3f& Pn);
+	std::vector<Eigen::MatrixXf> weightMatrices(const std::vector<float>& t, std::vector<float> taus);
+	std::vector<Eigen::MatrixXf> formGMatrices(Eigen::MatrixXf& vertices, Eigen::MatrixXf& tangentVectors);
+
+	void spline(std::vector<assignment::Spline::Vertex>& vertices, glm::vec3 P1, glm::vec3 Pn, const std::vector<float>& taus)
 	{
-		if (subdivision == 0 || left == right)
-			return;
-		vertices.insert(vertices.begin() + left + 1, assignment::Spline::Vertex{
-			((vertices.begin() + left)->position + (vertices.begin() + right)->position)/2.f,
-			glm::vec3(1.f, 0.f, 0.f) });
-		subdivide(vertices, 0, left, subdivision - 1);
-		//subdivide(vertices, , , subdivision - 1);
+		Eigen::MatrixXf _vertices = Eigen::MatrixXf::Zero(vertices.size(), 3);
+		for (uint64_t i = 0; i < vertices.size(); i++)
+		{
+			const auto v = vertices[i].position;
+			_vertices(i, 0) = v.x;
+			_vertices(i, 1) = v.y;
+			_vertices(i, 2) = v.z;
+		}
+
+		Eigen::Vector3f _P1 = { P1.x, P1.y, P1.z };
+		Eigen::Vector3f _Pn = { Pn.x, Pn.y, Pn.z };
+
+		std::vector<float> t = { 1.f };
+		calculateTs(vertices, t);
+
+		Eigen::MatrixXf M = Eigen::MatrixXf::Identity(vertices.size(), vertices.size());
+		for (uint64_t i = 1; i < vertices.size() - 1; i++)
+		{
+			M(i, i - 1) = t[i+1];
+			M(i, i) = 2 * (t[i] + t[i+1]);
+			M(i, i + 1) = t[i];
+		}
+
+		Eigen::MatrixXf tangentVectors = Eigen::MatrixXf::Zero(vertices.size(), 3);
+		
+		auto invM = M.inverse();
+		auto rMatrix = RMatrix(_vertices, t, _P1, _Pn);
+
+		tangentVectors = invM * rMatrix;
+		
+		std::vector<Eigen::MatrixXf> newVertices;
+		
+		auto gMatrices = formGMatrices(_vertices, tangentVectors);
+		auto weightMats = weightMatrices(t, taus);
+
+		for (int i = 0; i < vertices.size() - 1; i++)
+		{
+			for (int j = 0; j < taus.size(); j++)
+			{
+				auto weightMat = weightMats[(i * taus.size()) + j];
+				auto gMat = gMatrices[i];
+				auto newVertex = weightMat * gMat;
+				newVertices.push_back(newVertex);
+			}
+		}
+
+		std::vector<assignment::Spline::Vertex> newVertexArray;
+		auto start = vertices.begin();
+		int j = 0, k = 0;
+		for (int i = 0; i < newVertices.size() + vertices.size(); i++)
+		{
+			assignment::Spline::Vertex v;
+			if (i % (taus.size() + 1) == 0)
+			{
+				v.position = vertices[j].position;
+				j++;
+			}
+			else
+			{
+				v.position = glm::vec3( newVertices[k](0, 0), newVertices[k](0, 1), newVertices[k](0, 2) );
+				k++;
+			}
+			v.color = glm::vec3(1.f);
+			newVertexArray.push_back(v);
+		}
+
+		vertices = newVertexArray;
+	}
+
+	Eigen::Matrix4f splineSegmentMatrix(const std::vector<float>& t, uint64_t k)
+	{
+		Eigen::Matrix4f returnMatrix = Eigen::Matrix4f::Identity();
+		auto t_k1 = t[k + 1];
+		returnMatrix(0, 2) = -3.f / (t_k1 * t_k1);
+		returnMatrix(1, 2) = -2.f / (t_k1);
+		returnMatrix(2, 2) =  3.f / (t_k1 * t_k1);
+		returnMatrix(3, 2) = -1.f / (t_k1);
+		returnMatrix(0, 3) =  2.f / (t_k1 * t_k1 * t_k1);
+		returnMatrix(1, 3) =  1.f / (t_k1 * t_k1);
+		returnMatrix(2, 3) = -2.f / (t_k1 * t_k1 * t_k1);
+		returnMatrix(3, 3) =  1.f / (t_k1 * t_k1);
+
+		return returnMatrix;
+	}
+
+	std::vector<Eigen::MatrixXf> weightMatrices(const std::vector<float>& t, std::vector<float> taus)
+	{
+		std::vector<Eigen::MatrixXf> weightMatrices;
+		for (int i = 0; i < t.size() - 1; i++)
+		{
+			for (auto tau : taus)
+			{
+				Eigen::MatrixXf weightMatrix = Eigen::MatrixXf::Zero(1, 4);
+				weightMatrix (0, 0) = 2 * glm::pow(tau, 3) - 3 * glm::pow(tau, 2) + 1;
+				weightMatrix (0, 1) = -2 * glm::pow(tau, 3) + 3 * glm::pow(tau, 2);
+				weightMatrix (0, 2) = tau * (glm::pow(tau, 2) - 2 * tau + 1) * t[i + 1];
+				weightMatrix (0, 3) = tau * (glm::pow(tau, 2) - tau) * t[i + 1];
+				weightMatrices.push_back(std::move(weightMatrix));
+			}
+		}
+
+		return weightMatrices;
+	}
+
+	void calculateTs(const std::vector<assignment::Spline::Vertex>& vertices, std::vector<float>& t)
+	{
+		for (int i = 0; i < vertices.size() - 1; i++)
+			t.push_back(glm::distance(vertices[i + 1].position, vertices[i].position));
+	}
+
+	Eigen::MatrixXf RMatrix(const Eigen::MatrixXf& vertices, const std::vector<float>& t, const Eigen::Vector3f& P1, const Eigen::Vector3f& Pn)
+	{
+		const uint64_t n = vertices.rows();
+		Eigen::MatrixXf vectors = Eigen::MatrixXf::Zero(n, 3);
+
+		vectors(0, 0) = P1.x();
+		vectors(0, 1) = P1.y();
+		vectors(0, 2) = P1.z();
+
+		for (uint64_t i = 1; i < n - 1; i++)
+		{
+			vectors(i, 0) = (3.f / (t[i] * t[i + 1])) *
+				(float(glm::pow(t[i], 2)) * (vertices(i + 1, 0) - vertices(i, 0)) +
+				 float(glm::pow(t[i + 1], 2)) * (vertices(i, 0) - vertices(i - 1, 0)));
+			vectors(i, 1) = (3.f / (t[i] * t[i + 1])) *
+				(float(glm::pow(t[i], 2)) * (vertices(i + 1, 1) - vertices(i, 1)) +
+				 float(glm::pow(t[i + 1], 2)) * (vertices(i, 1) - vertices(i - 1, 1)));
+			vectors(i, 2) = (3.f / (t[i] * t[i + 1])) *
+				(float(glm::pow(t[i], 2)) * (vertices(i + 1, 2) - vertices(i, 2)) +
+				 float(glm::pow(t[i + 1], 2)) * (vertices(i, 2) - vertices(i - 1, 2)));
+		}
+
+		vectors(n - 1, 0) = Pn.x();
+		vectors(n - 1, 1) = Pn.y();
+		vectors(n - 1, 2) = Pn.z();
+
+		return vectors;
+	}
+
+	std::vector<Eigen::MatrixXf> formGMatrices(Eigen::MatrixXf& vertices, Eigen::MatrixXf& tangentVectors)
+	{
+		std::vector<Eigen::MatrixXf> mats;
+
+		const int n = vertices.rows();
+
+		for (int k = 0; k < n-1; k++)
+		{
+			Eigen::MatrixXf mat = Eigen::MatrixXf::Zero(4, 3);
+			mat.row(0) = vertices.row(k);
+			mat.row(1) = vertices.row(k+1);
+			mat.row(2) = tangentVectors.row(k);
+			mat.row(3) = tangentVectors.row(k+1);
+			mats.push_back(std::move(mat));
+		}
+		return mats;
 	}
 }
 
@@ -233,26 +388,23 @@ namespace assignment
 	{
 		std::shared_ptr<Model> model = Model::createModelFromFile(device, "assets/meshes/my_cube.obj");
 
-		Spline::Vertex v1{};
-		v1.position = { 0.f, 0.f, 0.f };
-		v1.color = glm::vec3(1.f);
-		Spline::Vertex v2{};
-		v2.position = { 1.f, 1.f, 1.f };
-		v2.color = glm::vec3(1.f);
-		Spline::Vertex v3{};
-		v3.position = { 1.f, 2.f, 2.f };
-		v3.color = glm::vec3(1.f);
-		Spline::Vertex v4{};
-		v4.position = { 2.f, 2.f, 2.f };
-		v4.color = glm::vec3(1.f);
-		Spline::Vertex v5{};
-		v5.position = { 1.f, 2.f, 4.f };
-		v5.color = glm::vec3(1.f);
-		std::vector<Spline::Vertex> vertices = { v1, v2, v3, v4, v5 };
-		for (int i = 0, j = vertices.size(); i < j - 1; i++)
+
+		std::vector<Spline::Vertex> vertices(5);
+		for (auto& v : vertices)
 		{
-			subdivide(vertices, i*2, (i + 1)*2, 2);
+			v.color = glm::vec3(1.f);
 		}
+		vertices[0].position = { 0.f,  0.f, 0.f };
+		vertices[1].position = { 1.f,  1.f, 0.f };
+		vertices[2].position = { 2.f, -1.f, 0.f };
+		vertices[3].position = { 3.f,  0.f, 0.f };
+		vertices[4].position = { 4.f,  -2.f, 3.f };
+
+		std::vector<float> taus;
+		for (int i = 0, n = 10; i < n; i++)
+			taus.push_back(float(i + 1) / float(n+1));
+
+		special::spline(vertices, { 1.f, 1.f, 1.f }, { 1.f, 1.f, 0.f }, taus);
 
 		std::shared_ptr<Spline> spline = Spline::createSplineFromVector(device, vertices);
 		auto gameObject = GameObject::createGameObject();
@@ -262,6 +414,7 @@ namespace assignment
 		gameObject.transform.rotation = { 0.f, 0.f, 0.f };
 		splineObjects.push_back(std::move(gameObject));
 
+		Spline::Vertex v1, v2;
 		v1.position = { -1000.f, 0.f, 0.f };
 		v1.color = { 1.f, 0.f, 0.f };
 		v2.position = { 1000.f, 0.f, 0.f };
