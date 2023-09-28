@@ -8,6 +8,8 @@
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include "glm/glm.hpp"
 
+#include <Eigen/Dense>
+
 #include <memory>
 #include <vector>
 
@@ -33,7 +35,8 @@ namespace assignment
 			}
 		};
 
-		Spline(Device& device, const std::vector<Vertex>& builder);
+		Spline(Device& device) : device(device) {}
+		Spline(Device& device, const std::vector<Vertex>& vertices);
 		~Spline();
 
 		NO_COPY(Spline);
@@ -45,6 +48,15 @@ namespace assignment
 		void draw(VkCommandBuffer commandBuffer);
 
 		void createVertexBuffers(const std::vector<Vertex>& vertices);
+
+		void calculateSplineWithCustomStep(std::vector<Vertex>& vertices, glm::vec3 P1, glm::vec3 Pn, const std::vector<float>& taus);
+		void calculateSplineEvenlySpaced(std::vector<Vertex>& vertices, glm::vec3 P1, glm::vec3 Pn, uint32_t n);
+
+	private:
+		void calculateTs(const std::vector<assignment::Spline::Vertex>& vertices, std::vector<float>& t);
+		std::vector<Eigen::MatrixXf> weightMatrices(const std::vector<float>& t, std::vector<float> taus);
+		Eigen::MatrixXf RMatrix(const Eigen::MatrixXf& vertices, const std::vector<float>& t, const Eigen::Vector3f& P1, const Eigen::Vector3f& Pn);
+		std::vector<Eigen::MatrixXf> formGMatrices(Eigen::MatrixXf& vertices, Eigen::MatrixXf& tangentVectors);
 
 	private:
 		Device& device;

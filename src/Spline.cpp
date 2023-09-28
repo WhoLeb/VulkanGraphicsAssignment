@@ -76,6 +76,158 @@ namespace assignment
 		device.copyBuffer(stagingBuffer.getBuffer(), vertexBuffer->getBuffer(), bufferSize);
 	}
 
+	void Spline::calculateSplineWithCustomStep(std::vector<Vertex>& vertices, glm::vec3 P1, glm::vec3 Pn, const std::vector<float>& taus)
+	{
+		Eigen::MatrixXf _vertices = Eigen::MatrixXf::Zero(vertices.size(), 3);
+		for (uint64_t i = 0; i < vertices.size(); i++)
+		{
+			const auto v = vertices[i].position;
+			_vertices(i, 0) = v.x;
+			_vertices(i, 1) = v.y;
+			_vertices(i, 2) = v.z;
+		}
+
+		Eigen::Vector3f _P1 = { P1.x, P1.y, P1.z };
+		Eigen::Vector3f _Pn = { Pn.x, Pn.y, Pn.z };
+
+		std::vector<float> t = { 1.f };
+		calculateTs(vertices, t);
+
+		Eigen::MatrixXf M = Eigen::MatrixXf::Identity(vertices.size(), vertices.size());
+		for (uint64_t i = 1; i < vertices.size() - 1; i++)
+		{
+			M(i, i - 1) = t[i+1];
+			M(i, i) = 2 * (t[i] + t[i+1]);
+			M(i, i + 1) = t[i];
+		}
+
+		Eigen::MatrixXf tangentVectors = Eigen::MatrixXf::Zero(vertices.size(), 3);
+		
+		auto invM = M.inverse();
+		auto rMatrix = RMatrix(_vertices, t, _P1, _Pn);
+
+		tangentVectors = invM * rMatrix;
+		
+		std::vector<Eigen::MatrixXf> newVertices;
+		
+		auto gMatrices = formGMatrices(_vertices, tangentVectors);
+		auto weightMats = weightMatrices(t, taus);
+
+		for (int i = 0; i < vertices.size() - 1; i++)
+		{
+			for (int j = 0; j < taus.size(); j++)
+			{
+				auto weightMat = weightMats[(i * taus.size()) + j];
+				auto gMat = gMatrices[i];
+				auto newVertex = weightMat * gMat;
+				newVertices.push_back(newVertex);
+			}
+		}
+
+		std::vector<assignment::Spline::Vertex> newVertexArray;
+		auto start = vertices.begin();
+		int j = 0, k = 0;
+		for (int i = 0; i < newVertices.size() + vertices.size(); i++)
+		{
+			assignment::Spline::Vertex v;
+			if (i % (taus.size() + 1) == 0)
+			{
+				v.position = vertices[j].position;
+				j++;
+			}
+			else
+			{
+				v.position = glm::vec3( newVertices[k](0, 0), newVertices[k](0, 1), newVertices[k](0, 2) );
+				k++;
+			}
+			v.color = glm::vec3(1.f);
+			newVertexArray.push_back(v);
+		}
+
+		vertices = newVertexArray;
+	}
+
+	void Spline::calculateSplineEvenlySpaced(std::vector<Vertex>& vertices, glm::vec3 P1, glm::vec3 Pn, uint32_t n)
+	{
+		std::vector<float> taus;
+		for (int i = 0; i < n; i++)
+			taus.push_back(float(i + 1) / float(n+1));
+
+		calculateSplineWithCustomStep(vertices, P1, Pn, taus);
+	}
+
+	void Spline::calculateTs(const std::vector<assignment::Spline::Vertex>& vertices, std::vector<float>& t)
+	{
+		for (int i = 0; i < vertices.size() - 1; i++)
+			t.push_back(glm::distance(vertices[i + 1].position, vertices[i].position));
+	}
+
+	std::vector<Eigen::MatrixXf> Spline::weightMatrices(const std::vector<float>& t, std::vector<float> taus)
+	{
+		std::vector<Eigen::MatrixXf> weightMatrices;
+		for (int i = 0; i < t.size() - 1; i++)
+		{
+			for (auto tau : taus)
+			{
+				Eigen::MatrixXf weightMatrix = Eigen::MatrixXf::Zero(1, 4);
+				weightMatrix (0, 0) = 2 * glm::pow(tau, 3) - 3 * glm::pow(tau, 2) + 1;
+				weightMatrix (0, 1) = -2 * glm::pow(tau, 3) + 3 * glm::pow(tau, 2);
+				weightMatrix (0, 2) = tau * (glm::pow(tau, 2) - 2 * tau + 1) * t[i + 1];
+				weightMatrix (0, 3) = tau * (glm::pow(tau, 2) - tau) * t[i + 1];
+				weightMatrices.push_back(std::move(weightMatrix));
+			}
+		}
+
+		return weightMatrices;
+	}
+
+	Eigen::MatrixXf Spline::RMatrix(const Eigen::MatrixXf& vertices, const std::vector<float>& t, const Eigen::Vector3f& P1, const Eigen::Vector3f& Pn)
+	{
+		const uint64_t n = vertices.rows();
+		Eigen::MatrixXf vectors = Eigen::MatrixXf::Zero(n, 3);
+
+		vectors(0, 0) = P1.x();
+		vectors(0, 1) = P1.y();
+		vectors(0, 2) = P1.z();
+
+		for (uint64_t i = 1; i < n - 1; i++)
+		{
+			vectors(i, 0) = (3.f / (t[i] * t[i + 1])) *
+				(float(glm::pow(t[i], 2)) * (vertices(i + 1, 0) - vertices(i, 0)) +
+				 float(glm::pow(t[i + 1], 2)) * (vertices(i, 0) - vertices(i - 1, 0)));
+			vectors(i, 1) = (3.f / (t[i] * t[i + 1])) *
+				(float(glm::pow(t[i], 2)) * (vertices(i + 1, 1) - vertices(i, 1)) +
+				 float(glm::pow(t[i + 1], 2)) * (vertices(i, 1) - vertices(i - 1, 1)));
+			vectors(i, 2) = (3.f / (t[i] * t[i + 1])) *
+				(float(glm::pow(t[i], 2)) * (vertices(i + 1, 2) - vertices(i, 2)) +
+				 float(glm::pow(t[i + 1], 2)) * (vertices(i, 2) - vertices(i - 1, 2)));
+		}
+
+		vectors(n - 1, 0) = Pn.x();
+		vectors(n - 1, 1) = Pn.y();
+		vectors(n - 1, 2) = Pn.z();
+
+		return vectors;
+	}
+
+	std::vector<Eigen::MatrixXf> Spline::formGMatrices(Eigen::MatrixXf& vertices, Eigen::MatrixXf& tangentVectors)
+	{
+		std::vector<Eigen::MatrixXf> mats;
+
+		const int n = vertices.rows();
+
+		for (int k = 0; k < n-1; k++)
+		{
+			Eigen::MatrixXf mat = Eigen::MatrixXf::Zero(4, 3);
+			mat.row(0) = vertices.row(k);
+			mat.row(1) = vertices.row(k+1);
+			mat.row(2) = tangentVectors.row(k);
+			mat.row(3) = tangentVectors.row(k+1);
+			mats.push_back(std::move(mat));
+		}
+		return mats;
+	}
+
 	std::vector<VkVertexInputBindingDescription> Spline::Vertex::getBindingDescriptions()
 	{
 		std::vector<VkVertexInputBindingDescription> bindingDescriptions(1);
