@@ -62,4 +62,7 @@
 <img src="readme/pre build events.png">
 
 ## Что прикольного можно менять
+В целом основные изменения делать в классе Application в функции run или loadGameObjects
 Можно менять очень легко проекцию, например. Просто при создании камеры поставить setPerspectiveProjection/setOrthographicProjection. Остальное придумывайте сами, я не знаю что можно поменять настолько же просто.
+
+Создание объектов в функции loadGameObjects в классе Application
