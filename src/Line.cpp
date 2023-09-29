@@ -1,4 +1,4 @@
-#include "Spline.h"
+#include "Line.h"
 
 #include "utils.h"
 
@@ -11,8 +11,8 @@
 namespace std
 {
 	template<>
-	struct hash<assignment::Spline::Vertex> {
-		size_t operator()(assignment::Spline::Vertex const& vertex) const
+	struct hash<assignment::Line::Vertex> {
+		size_t operator()(assignment::Line::Vertex const& vertex) const
 		{
 			size_t seed = 0;
 			assignment::hashCombine(seed, vertex.position, vertex.color, vertex.normal);
@@ -23,20 +23,20 @@ namespace std
 
 namespace assignment
 {
-	Spline::Spline(Device& device, const std::vector<Vertex>& vertices)
+	Line::Line(Device& device, const std::vector<Vertex>& vertices)
 		: device(device)
 	{
 		createVertexBuffers(vertices);
 	}
 
-	Spline::~Spline() {}
+	Line::~Line() {}
 
-	std::unique_ptr<Spline> Spline::createSplineFromVector(Device& device, const std::vector<Vertex>& vertices)
+	std::unique_ptr<Line> Line::createLineFromVector(Device& device, const std::vector<Vertex>& vertices)
 	{
-		return std::make_unique<Spline>(device, vertices);
+		return std::make_unique<Line>(device, vertices);
 	}
 
-	void Spline::bind(VkCommandBuffer commandBuffer)
+	void Line::bind(VkCommandBuffer commandBuffer)
 	{
 		VkBuffer buffers[] = { vertexBuffer->getBuffer() };
 		VkDeviceSize offsets[] = { 0 };
@@ -44,12 +44,12 @@ namespace assignment
 		vkCmdBindVertexBuffers(commandBuffer, 0, 1, buffers, offsets);
 	}
 
-	void Spline::draw(VkCommandBuffer commandBuffer)
+	void Line::draw(VkCommandBuffer commandBuffer)
 	{
 		vkCmdDraw(commandBuffer, vertexCount, 1, 0, 0);
 	}
 
-	void Spline::createVertexBuffers(const std::vector<Vertex>& vertices)
+	void Line::createVertexBuffers(const std::vector<Vertex>& vertices)
 	{
 		vertexCount = uint32_t(vertices.size());
 
@@ -76,7 +76,7 @@ namespace assignment
 		device.copyBuffer(stagingBuffer.getBuffer(), vertexBuffer->getBuffer(), bufferSize);
 	}
 
-	void Spline::calculateSplineWithCustomStep(std::vector<Vertex>& vertices, glm::vec3 P1, glm::vec3 Pn, const std::vector<float>& taus)
+	std::unique_ptr<Line> Line::calculateSplineWithCustomStep(Device& device, const std::vector<Vertex>& vertices, glm::vec3 P1, glm::vec3 Pn, const std::vector<float>& taus)
 	{
 		Eigen::MatrixXf _vertices = Eigen::MatrixXf::Zero(vertices.size(), 3);
 		for (uint64_t i = 0; i < vertices.size(); i++)
@@ -124,45 +124,46 @@ namespace assignment
 			}
 		}
 
-		std::vector<assignment::Spline::Vertex> newVertexArray;
+		std::vector<Vertex> newVertexArray;
 		auto start = vertices.begin();
 		int j = 0, k = 0;
 		for (int i = 0; i < newVertices.size() + vertices.size(); i++)
 		{
-			assignment::Spline::Vertex v;
+			assignment::Line::Vertex v;
 			if (i % (taus.size() + 1) == 0)
 			{
 				v.position = vertices[j].position;
+				v.color = vertices[j].color;
 				j++;
 			}
 			else
 			{
+				v.color = (vertices[j].color + vertices[j-1].color)/2.f;
 				v.position = glm::vec3( newVertices[k](0, 0), newVertices[k](0, 1), newVertices[k](0, 2) );
 				k++;
 			}
-			v.color = glm::vec3(1.f);
 			newVertexArray.push_back(v);
 		}
 
-		vertices = newVertexArray;
+		return std::make_unique<Line>(device, newVertexArray);
 	}
 
-	void Spline::calculateSplineEvenlySpaced(std::vector<Vertex>& vertices, glm::vec3 P1, glm::vec3 Pn, uint32_t n)
+	std::unique_ptr<Line> Line::calculateSplineEvenlySpaced(Device& device, const std::vector<Vertex>& vertices, glm::vec3 P1, glm::vec3 Pn, uint32_t n)
 	{
 		std::vector<float> taus;
 		for (int i = 0; i < n; i++)
 			taus.push_back(float(i + 1) / float(n+1));
 
-		calculateSplineWithCustomStep(vertices, P1, Pn, taus);
+		return calculateSplineWithCustomStep(device, vertices, P1, Pn, taus);
 	}
 
-	void Spline::calculateTs(const std::vector<assignment::Spline::Vertex>& vertices, std::vector<float>& t)
+	void Line::calculateTs(const std::vector<Vertex>& vertices, std::vector<float>& t)
 	{
 		for (int i = 0; i < vertices.size() - 1; i++)
 			t.push_back(glm::distance(vertices[i + 1].position, vertices[i].position));
 	}
 
-	std::vector<Eigen::MatrixXf> Spline::weightMatrices(const std::vector<float>& t, std::vector<float> taus)
+	std::vector<Eigen::MatrixXf> Line::weightMatrices(const std::vector<float>& t, std::vector<float> taus)
 	{
 		std::vector<Eigen::MatrixXf> weightMatrices;
 		for (int i = 0; i < t.size() - 1; i++)
@@ -181,7 +182,7 @@ namespace assignment
 		return weightMatrices;
 	}
 
-	Eigen::MatrixXf Spline::RMatrix(const Eigen::MatrixXf& vertices, const std::vector<float>& t, const Eigen::Vector3f& P1, const Eigen::Vector3f& Pn)
+	Eigen::MatrixXf Line::RMatrix(const Eigen::MatrixXf& vertices, const std::vector<float>& t, const Eigen::Vector3f& P1, const Eigen::Vector3f& Pn)
 	{
 		const uint64_t n = vertices.rows();
 		Eigen::MatrixXf vectors = Eigen::MatrixXf::Zero(n, 3);
@@ -210,7 +211,7 @@ namespace assignment
 		return vectors;
 	}
 
-	std::vector<Eigen::MatrixXf> Spline::formGMatrices(Eigen::MatrixXf& vertices, Eigen::MatrixXf& tangentVectors)
+	std::vector<Eigen::MatrixXf> Line::formGMatrices(Eigen::MatrixXf& vertices, Eigen::MatrixXf& tangentVectors)
 	{
 		std::vector<Eigen::MatrixXf> mats;
 
@@ -228,7 +229,7 @@ namespace assignment
 		return mats;
 	}
 
-	std::vector<VkVertexInputBindingDescription> Spline::Vertex::getBindingDescriptions()
+	std::vector<VkVertexInputBindingDescription> Line::Vertex::getBindingDescriptions()
 	{
 		std::vector<VkVertexInputBindingDescription> bindingDescriptions(1);
 		bindingDescriptions[0].binding = 0;
@@ -238,7 +239,7 @@ namespace assignment
 		return bindingDescriptions;
 	}
 
-	std::vector<VkVertexInputAttributeDescription> Spline::Vertex::getAttributeDescriptions()
+	std::vector<VkVertexInputAttributeDescription> Line::Vertex::getAttributeDescriptions()
 	{
 		std::vector<VkVertexInputAttributeDescription> attributeDescriptions(3);
 

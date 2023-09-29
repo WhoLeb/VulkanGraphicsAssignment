@@ -1,4 +1,4 @@
-#include "SplineRenderSystem.h"
+#include "LinesRenderSystem.h"
 
 #include <array>
 #include <stdexcept>
@@ -11,19 +11,19 @@ namespace assignment
 		glm::mat4 normalMatrix{ 1.f };
 	};
 
-	SplineRenderSystem::SplineRenderSystem(Device& device, VkRenderPass renderPass, VkDescriptorSetLayout globalSetLayout)
+	LinesRenderSystem::LinesRenderSystem(Device& device, VkRenderPass renderPass, VkDescriptorSetLayout globalSetLayout)
 		: device(device)
 	{
 		createPipelineLayout(globalSetLayout);
 		createPipeline(renderPass);
 	}
 
-	SplineRenderSystem::~SplineRenderSystem()
+	LinesRenderSystem::~LinesRenderSystem()
 	{
 		vkDestroyPipelineLayout(device.device(), pipelineLayout, nullptr);
 	}
 
-	void SplineRenderSystem::renderSplineObjects(FrameInfo& frameInfo, std::vector<GameObject>& gameObjects)
+	void LinesRenderSystem::renderSplineObjects(FrameInfo& frameInfo, std::vector<GameObject>& gameObjects)
 	{
 		pipeline->bind(frameInfo.commandBuffer);
 
@@ -49,12 +49,12 @@ namespace assignment
 				sizeof(SimplePushConstantData),
 				&push);
 
-			obj.spline->bind(frameInfo.commandBuffer);
-			obj.spline->draw(frameInfo.commandBuffer);
+			obj.line->bind(frameInfo.commandBuffer);
+			obj.line->draw(frameInfo.commandBuffer);
 		}
 	}
 
-	void SplineRenderSystem::createPipelineLayout(VkDescriptorSetLayout globalSetLayout)
+	void LinesRenderSystem::createPipelineLayout(VkDescriptorSetLayout globalSetLayout)
 	{
 		VkPushConstantRange pushConstantRange{};
 		pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
@@ -74,7 +74,7 @@ namespace assignment
 			throw std::runtime_error("Failed to create pipeline layout");
 	}
 
-	void SplineRenderSystem::createPipeline(VkRenderPass renderPass)
+	void LinesRenderSystem::createPipeline(VkRenderPass renderPass)
 	{
 		PipelineConfigInfo pipelineConfig{};
 		Pipeline::defaultPipelineConfigInfo(pipelineConfig);

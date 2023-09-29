@@ -2,7 +2,7 @@
 
 #include "BaseClassDefines.h"
 #include "Model.h"
-#include "Spline.h"
+#include "Line.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -39,7 +39,7 @@ namespace assignment
 		const id_t getId() { return id; }
 
 		std::shared_ptr<Model> model{};
-		std::shared_ptr<Spline> spline{};
+		std::shared_ptr<Line> line{};
 		glm::vec3 color{};
 		TransformComponent transform{};
 

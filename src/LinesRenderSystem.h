@@ -11,13 +11,13 @@
 
 namespace assignment
 {
-	class SplineRenderSystem
+	class LinesRenderSystem
 	{
 	public:
-		SplineRenderSystem(Device& device, VkRenderPass renderPass, VkDescriptorSetLayout globalSetLayout);
-		~SplineRenderSystem();
+		LinesRenderSystem(Device& device, VkRenderPass renderPass, VkDescriptorSetLayout globalSetLayout);
+		~LinesRenderSystem();
 
-		NO_COPY(SplineRenderSystem);
+		NO_COPY(LinesRenderSystem);
 
 	public:
 		void renderSplineObjects(FrameInfo& frameInfo, std::vector<GameObject>& gameObjects);

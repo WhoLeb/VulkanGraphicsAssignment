@@ -2,8 +2,8 @@
 
 #include "Camera.h"
 #include "SimpleRenderSystem.h"
-#include "SplineRenderSystem.h"
-#include "Spline.h"
+#include "LinesRenderSystem.h"
+#include "Line.h"
 #include "KeyboardMovementController.h"
 #include "Model.h"
 
@@ -68,7 +68,7 @@ namespace assignment
 		}
 
 		SimpleRenderSystem simpleRenderSystem(device, renderer.getSwapChainRenderPass(), globalSetLayout->getDescriptorSetLayout());
-		SplineRenderSystem splineRenderSystem(device, renderer.getSwapChainRenderPass(), globalSetLayout->getDescriptorSetLayout());
+		LinesRenderSystem linesRenderSystem(device, renderer.getSwapChainRenderPass(), globalSetLayout->getDescriptorSetLayout());
 
 		auto viewerObject = GameObject::createGameObject(); 
 		viewerObject.transform.translation = { 0.f, 0.f, -1.f };
@@ -129,7 +129,7 @@ namespace assignment
 				// render
 				renderer.beginSwapChainRenderPass(commandBuffer);
 				simpleRenderSystem.renderGameObjects(frameInfo, gameObjects);
-				splineRenderSystem.renderSplineObjects(frameInfo, splineObjects);
+				linesRenderSystem.renderSplineObjects(frameInfo, lineObjects);
 				renderer.endSwapChainRenderPass(commandBuffer);
 				renderer.endFrame();
 			}
@@ -142,44 +142,47 @@ namespace assignment
 	{
 		std::shared_ptr<Model> model = Model::createModelFromFile(device, "assets/meshes/my_cube.obj");
 
-		std::vector<Spline::Vertex> vertices(5);
+		std::vector<Line::Vertex> vertices(5);
 		for (auto& v : vertices)
-		{
-			v.color = glm::vec3(1.f);
-		}
-		vertices[0].position = { 0.f,  0.f, 0.f };
-		vertices[1].position = { 1.f,  1.f, 0.f };
-		vertices[2].position = { 2.f, -1.f, 0.f };
+			v.color = { 1.f, 0.f, 0.f };
+		vertices[0].position = { 0.f,  0.f, 5.f };
+		vertices[1].position = { 1.f,  1.f, -3.f };
+		vertices[2].position = { 2.f, -1.f, 2.f };
 		vertices[3].position = { 3.f,  0.f, 0.f };
 		vertices[4].position = { 4.f,  -2.f, 3.f };
 
-		std::vector<float> taus;
-		for (int i = 0, n = 10; i < n; i++)
-			taus.push_back(float(i + 1) / float(n+1));
-
-		std::shared_ptr<Spline> spline = std::make_shared<Spline>(device);
-		spline->calculateSplineEvenlySpaced(vertices, glm::vec3(1.f), glm::vec3(1.f), 20);
-		spline->createVertexBuffers(vertices);
+		std::shared_ptr<Line> spline = Line::createLineFromVector(device, vertices);
 		auto gameObject = GameObject::createGameObject();
-		gameObject.spline = spline;
+		gameObject.line = spline;
 		gameObject.transform.translation = { 0.f, 0.f, 0.f };
 		gameObject.transform.scale = glm::vec3(0.3f);
 		gameObject.transform.rotation = { 0.f, 0.f, 0.f };
-		splineObjects.push_back(std::move(gameObject));
+		lineObjects.push_back(std::move(gameObject));
 
-		Spline::Vertex v1, v2;
+		for (auto& v : vertices)
+			v.color = { 0.f, 1.f, 0.f };
+
+		spline = Line::calculateSplineEvenlySpaced(device, vertices, glm::vec3(1.f), glm::vec3(1.f), 20);
+		gameObject = GameObject::createGameObject();
+		gameObject.line = spline;
+		gameObject.transform.translation = { 0.f, 0.f, 0.f };
+		gameObject.transform.scale = glm::vec3(0.3f);
+		gameObject.transform.rotation = { 0.f, 0.f, 0.f };
+		lineObjects.push_back(std::move(gameObject));
+
+		Line::Vertex v1, v2;
 		v1.position = { -1000.f, 0.f, 0.f };
 		v1.color = { 1.f, 0.f, 0.f };
 		v2.position = { 1000.f, 0.f, 0.f };
 		v2.color = { 1.f, 0.f, 0.f };
-		std::vector<Spline::Vertex> axisLine = { v1, v2 };
+		std::vector<Line::Vertex> axisLine = { v1, v2 };
 
 		auto axis = GameObject::createGameObject();
-		axis.spline = Spline::createSplineFromVector(device, axisLine);
+		axis.line = Line::createLineFromVector(device, axisLine);
 		axis.transform.translation = glm::vec3(0.f);
 		axis.transform.scale = glm::vec3(1.f);
 		axis.transform.rotation = { 0.f, 0.f, 0.f };
-		splineObjects.push_back(std::move(axis));
+		lineObjects.push_back(std::move(axis));
 
 		v1.position = { 0.f,  -1000.f, 0.f };
 		v1.color = { 0.f, 1.f, 0.f };
@@ -188,11 +191,11 @@ namespace assignment
 		axisLine = { v1, v2 };
 
 		axis = GameObject::createGameObject();
-		axis.spline = Spline::createSplineFromVector(device, axisLine);
+		axis.line = Line::createLineFromVector(device, axisLine);
 		axis.transform.translation = glm::vec3(0.f);
 		axis.transform.scale = glm::vec3(1.f);
 		axis.transform.rotation = { 0.f, 0.f, 0.f };
-		splineObjects.push_back(std::move(axis));
+		lineObjects.push_back(std::move(axis));
 
 		v1.position = { 0.f, 0.f,  -1000.f };
 		v1.color = { 0.f, 0.f, 1.f };
@@ -201,11 +204,11 @@ namespace assignment
 		axisLine = { v1, v2 };
 
 		axis = GameObject::createGameObject();
-		axis.spline = Spline::createSplineFromVector(device, axisLine);
+		axis.line = Line::createLineFromVector(device, axisLine);
 		axis.transform.translation = glm::vec3(0.f);
 		axis.transform.scale = glm::vec3(1.f);
 		axis.transform.rotation = { 0.f, 0.f, 0.f };
-		splineObjects.push_back(std::move(axis));
+		lineObjects.push_back(std::move(axis));
 	}
 
 }
