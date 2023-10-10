@@ -22,6 +22,7 @@ namespace assignment
 	public:
 		void renderGameObjects(FrameInfo& frameInfo, std::vector<GameObject>& gameObjects);
 
+		VkPipeline getPipeline() const { return pipeline->getPipeline(); }
 	private:
 		void createPipelineLayout(VkDescriptorSetLayout globalSetLayout);
 		void createPipeline(VkRenderPass renderPass);

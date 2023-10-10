@@ -38,11 +38,13 @@ namespace assignment
 		NO_COPY_NO_MOVE(Device);
 
 	public:
-		VkCommandPool getCommandPool() { return commandPool; }
-		VkDevice device() { return m_device; }
-		VkSurfaceKHR surface() { return m_surface; }
-		VkQueue graphicsQueue() { return m_graphicsQueue; }
-		VkQueue presentQueue() { return m_presentQueue; }
+		VkCommandPool getCommandPool() const { return commandPool; }
+		VkDevice device() const { return m_device; }
+		VkSurfaceKHR surface() const { return m_surface; }
+		VkQueue graphicsQueue() const { return m_graphicsQueue; }
+		VkQueue presentQueue() const { return m_presentQueue; }
+		VkInstance getInstance() const { return instance; }
+		VkPhysicalDevice getPhysicalDevice() const { return physicalDevice; }
 
 		SwapChainSupportDetails getSwapChainSupport() { return querySwapChainSupport(physicalDevice); }
 		uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);

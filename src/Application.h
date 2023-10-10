@@ -28,6 +28,7 @@ namespace assignment
 
 	private:
 		void loadGameObjects();
+		void initImGui();
 
 	private:
 		Window window{ WIDTH, HEIGHT, "Что-нибудь доброе" };

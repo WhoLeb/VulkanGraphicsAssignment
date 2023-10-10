@@ -10,6 +10,10 @@
 #include "glm/gtx/rotate_vector.hpp"
 #include <Eigen/Dense>
 
+#include "imgui.h"
+#include "backends/imgui_impl_glfw.h"
+#include "backends/imgui_impl_vulkan.h"
+
 #include <stdexcept>
 #include <chrono>
 #include <array>
@@ -18,7 +22,8 @@
 namespace assignment
 {
 	struct GlobalUbo {
-		glm::mat4 projectionView{ 1.f };
+		glm::mat4 projectionMatrix;
+		glm::mat4 viewMatrix;
 		glm::vec3 lightDirection = glm::normalize(glm::vec3{ 1.f, -1.f, -1.f });
 	};
 
@@ -38,6 +43,12 @@ namespace assignment
 
 	void Application::run()
 	{
+		IMGUI_CHECKVERSION();
+		ImGui::CreateContext();
+		initImGui();
+		ImGuiIO& io = ImGui::GetIO();
+		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+
 		std::vector<std::unique_ptr<Buffer>> uboBuffers(SwapChain::MAX_FRAMES_IN_FLIGHT);
 		for (int i = 0; i < uboBuffers.size(); i++)
 		{
@@ -105,7 +116,7 @@ namespace assignment
 
 			float aspect = renderer.getAspectRatio();
 			//camera.setOrthographicProjection(-aspect, -1, -1, aspect, 1, 30);
-			camera.setPerspecitveProjection(glm::radians(45.f), aspect, 0.1f, 10.f);
+			camera.setPerspecitveProjection(glm::radians(45.f), aspect, 0.1f, 100.f);
 
 			if (auto commandBuffer = renderer.beginFrame())
 			{
@@ -120,28 +131,39 @@ namespace assignment
 
 				// Установлении проекции камеры, направления света
 				GlobalUbo ubo{};
-				ubo.projectionView = camera.getProjection() * camera.getView();
+				ubo.projectionMatrix = camera.getProjection();
+				ubo.viewMatrix = camera.getView();
 				ubo.lightDirection = glm::vec3(1.f, -1.f, -1.f);
 
 				uboBuffers[frameIndex]->writeToBuffer(&ubo);
 				uboBuffers[frameIndex]->flush(); 
 
+				ImGui_ImplVulkan_NewFrame();
+				ImGui_ImplGlfw_NewFrame();
+				ImGui::NewFrame();
+
+				ImGui::ShowDemoWindow();
+				ImGui::Render();
+
 				// render
 				renderer.beginSwapChainRenderPass(commandBuffer);
 				simpleRenderSystem.renderGameObjects(frameInfo, gameObjects);
 				linesRenderSystem.renderSplineObjects(frameInfo, lineObjects);
+
+				ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
 				renderer.endSwapChainRenderPass(commandBuffer);
 				renderer.endFrame();
 			}
 		}
 
+		ImGui_ImplVulkan_Shutdown();
+		ImGui_ImplGlfw_Shutdown();
+		ImGui::DestroyContext();
 		vkDeviceWaitIdle(device.device());
 	}
 
 	void Application::loadGameObjects()
 	{
-		std::shared_ptr<Model> model = Model::createModelFromFile(device, "assets/meshes/my_cube.obj");
-
 		std::vector<Line::Vertex> vertices(5);
 		for (auto& v : vertices)
 			v.color = { 1.f, 0.f, 0.f };
@@ -209,6 +231,46 @@ namespace assignment
 		axis.transform.scale = glm::vec3(1.f);
 		axis.transform.rotation = { 0.f, 0.f, 0.f };
 		lineObjects.push_back(std::move(axis));
+	}
+
+
+	void Application::initImGui()
+	{
+		IMGUI_CHECKVERSION();
+
+		std::unique_ptr<DescriptorPool> imguiPool = DescriptorPool::Builder(device)
+			.addPoolSize(VK_DESCRIPTOR_TYPE_SAMPLER, SwapChain::MAX_FRAMES_IN_FLIGHT)
+			.addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, SwapChain::MAX_FRAMES_IN_FLIGHT)
+			.addPoolSize(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, SwapChain::MAX_FRAMES_IN_FLIGHT)
+			.addPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, SwapChain::MAX_FRAMES_IN_FLIGHT)
+			.addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, SwapChain::MAX_FRAMES_IN_FLIGHT)
+			.addPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, SwapChain::MAX_FRAMES_IN_FLIGHT)
+			.addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, SwapChain::MAX_FRAMES_IN_FLIGHT)
+			.addPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, SwapChain::MAX_FRAMES_IN_FLIGHT)
+			.addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, SwapChain::MAX_FRAMES_IN_FLIGHT)
+			.addPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, SwapChain::MAX_FRAMES_IN_FLIGHT)
+			.addPoolSize(VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, SwapChain::MAX_FRAMES_IN_FLIGHT)
+			.setPoolFlags(VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT)
+			.build();
+
+		ImGui_ImplGlfw_InitForVulkan(window.getGLFWwindow(), true);
+		ImGui_ImplVulkan_InitInfo initInfo{};
+		initInfo.Instance = device.getInstance();
+		initInfo.PhysicalDevice = device.getPhysicalDevice();
+		initInfo.Device = device.device();
+		initInfo.QueueFamily = device.findPhysicalQueueFamilies().graphicsFamily;
+		initInfo.Queue = device.graphicsQueue();
+		initInfo.DescriptorPool = imguiPool->getDescriptorPool();
+		initInfo.MinImageCount = SwapChain::MAX_FRAMES_IN_FLIGHT;
+		initInfo.ImageCount = SwapChain::MAX_FRAMES_IN_FLIGHT;
+		initInfo.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+		ImGui_ImplVulkan_Init(&initInfo, renderer.getSwapChainRenderPass());
+
+		VkCommandBuffer commandBuffer = device.beginSingleTimeCommands();
+		ImGui_ImplVulkan_CreateFontsTexture(commandBuffer);
+		device.endSingleTimeCommands(commandBuffer);
+		vkDeviceWaitIdle(device.device());
+		ImGui_ImplVulkan_DestroyFontUploadObjects();
 	}
 
 }

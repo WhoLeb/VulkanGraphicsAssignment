@@ -95,7 +95,7 @@ namespace assignment
 
 		pipelineConfig.renderPass = renderPass;
 		pipelineConfig.pipelineLayout = pipelineLayout;
-		pipeline = std::make_unique<Pipeline>(
+		pipeline = std::make_shared<Pipeline>(
 			device,
 			"shaders/splineVert.spv",
 			"shaders/splineFrag.spv",

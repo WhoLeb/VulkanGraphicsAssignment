@@ -29,7 +29,7 @@ namespace assignment
 	private:
 		Device& device;
 
-		std::unique_ptr<Pipeline> pipeline;
+		std::shared_ptr<Pipeline> pipeline;
 		VkPipelineLayout pipelineLayout;
 	};
 }

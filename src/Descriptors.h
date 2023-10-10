@@ -74,6 +74,8 @@ namespace assignment
 		NO_COPY(DescriptorPool);
 
 	public:
+		VkDescriptorPool getDescriptorPool() const { return descriptorPool; }
+
 		bool allocateDescriptor(const VkDescriptorSetLayout descriptorSetLayout, VkDescriptorSet& descriptor) const;
 		void freeDescriptors(std::vector<VkDescriptorSet> descriptors) const;
 

@@ -5,6 +5,9 @@ namespace assignment
 
 	void KeyboardMovementController::moveInPlaneXZ(GLFWwindow* window, float dt, GameObject& gameObject)
 	{
+		if (glfwGetKey(window, keys.resetCameraPosition) == GLFW_PRESS)
+			resetCameraPosition(gameObject);
+
 		glm::vec3 rotate{ 0.f };
 
 		if (glfwGetKey(window, keys.lookRight) == GLFW_PRESS) rotate.y += 1.f;
@@ -34,6 +37,12 @@ namespace assignment
 		if (glm::dot(moveDir, moveDir) > std::numeric_limits<float>::epsilon()) {
 			gameObject.transform.translation += moveSpeed * dt * glm::normalize(moveDir);
 		}
+	}
+
+	void KeyboardMovementController::resetCameraPosition(GameObject& gameObject)
+	{
+		gameObject.transform.rotation = { 0.f, 0.f, 0.f };
+		gameObject.transform.translation = { 0.f, 0.f, 0.f };
 	}
 
 }

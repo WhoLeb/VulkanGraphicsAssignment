@@ -40,6 +40,9 @@ namespace assignment
 			return currentFrameIndex;
 		}
 
+		VkCommandBuffer getCommandBufferAt(uint32_t i) const
+		{ return commandBuffers[i]; }
+
 	private:
 		void createCommandBuffers();
 		void freeCommandBuffers();
