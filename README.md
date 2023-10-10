@@ -9,6 +9,7 @@
     <li>VulkanSDK https://vulkan.lunarg.com/ - Вулкан(графический API) качаем с инстоллера </li>
     <li>tinyobjloader https://github.com/tinyobjloader/tinyobjloader.git - однофайловая ютилити для загрузки моделей</li>
     <li>stb https://github.com/nothings/stb.git - однофайловая ютилити для загрузки текстур из картинок(png)</li>
+    <li>Eigen https://eigen.tuxfamily.org/index.php?title=Main_Page - для математики с матрицами )</li>
 </ul>
 
 <br>
@@ -61,4 +62,8 @@
 <img src="readme/pre build events.png">
 
 ## Что прикольного можно менять
+В целом основные изменения делать в классе Application в функции run или loadGameObjects.
+
 Можно менять очень легко проекцию, например. Просто при создании камеры поставить setPerspectiveProjection/setOrthographicProjection. Остальное придумывайте сами, я не знаю что можно поменять настолько же просто.
+
+Создание объектов в функции loadGameObjects в классе Application
