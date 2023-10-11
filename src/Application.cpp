@@ -18,6 +18,7 @@
 #include <chrono>
 #include <array>
 #include <iostream>
+#include <format>
 
 namespace assignment
 {
@@ -32,7 +33,7 @@ namespace assignment
 		globalPool = DescriptorPool::Builder(device)
 			.setMaxSets(SwapChain::MAX_FRAMES_IN_FLIGHT)
 			.addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, SwapChain::MAX_FRAMES_IN_FLIGHT)
-			.addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, SwapChain::MAX_FRAMES_IN_FLIGHT)
+			.addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 100)
 			.build();
 		loadGameObjects();
 		
@@ -89,19 +90,27 @@ namespace assignment
 		camera.setViewTarget({0.f, 0.f, -1.f}, {0.f, 0.f, 0.f});
 
 		auto currentTime = std::chrono::high_resolution_clock::now();
-
-		auto startTime = std::chrono::high_resolution_clock::now();
 		
-		auto lastKeystroke = std::chrono::high_resolution_clock::now();
+		int vertexCount = 5;
+		std::vector<Line::Vertex> splineVertices(5);
 
-		uint32_t selectedVertex = 0;
+		splineVertices[0].position = { 0.f,  0.f, 5.f };
+		splineVertices[1].position = { 1.f,  1.f, -3.f };
+		splineVertices[2].position = { 2.f, -1.f, 2.f };
+		splineVertices[3].position = { 3.f,  0.f, 0.f };
+		splineVertices[4].position = { 4.f,  -2.f, 3.f };
 
-		{
-			auto keysAvailable = std::chrono::duration<float, std::chrono::seconds::period>(currentTime > lastKeystroke).count() > 0.1f;
-			if (keysAvailable && glfwGetKey(window.getGLFWwindow(), GLFW_KEY_U) == GLFW_PRESS)
-			{
-			}
-		}
+		std::shared_ptr<Line> spline = Line::createLineFromVector(device, splineVertices);
+		auto gameObject = GameObject::createGameObject();
+		gameObject.line = spline;
+		gameObject.transform.scale = glm::vec3(0.3f);
+		lineObjects.push_back(std::move(gameObject));
+
+		spline = Line::calculateSplineEvenlySpaced(device, splineVertices, glm::vec3(1.f), glm::vec3(1.f), 20);
+		gameObject = GameObject::createGameObject();
+		gameObject.line = spline;
+		gameObject.transform.scale = glm::vec3(0.3f);
+		lineObjects.push_back(std::move(gameObject));
 
 		while (!window.shouldClose())
 		{
@@ -142,8 +151,37 @@ namespace assignment
 				ImGui_ImplGlfw_NewFrame();
 				ImGui::NewFrame();
 
-				ImGui::ShowDemoWindow();
+				//ImGui::ShowDemoWindow();
+				ImGui::Begin("Frame time");
+				ImGui::Text(std::to_string(frameTime).c_str());
+				ImGui::End();
+				
+				ImGui::Begin("Spline vertex controls");
+				if (ImGui::InputInt("Vertex count", &vertexCount))
+				{
+					if (vertexCount < 2)
+					{
+						ImGui::Text("Wrong size, setting it to 2");
+						vertexCount = 2;
+					}
+					splineVertices.resize(vertexCount);
+				}
+
+				for (int i = 0; i < vertexCount; i++)
+					ImGui::InputFloat3(std::format("Vertex {} position", i).c_str(), (float*)&splineVertices[i].position);
+
+				ImGui::End();
 				ImGui::Render();
+
+				for (auto& v : splineVertices)
+					v.color = { 1.f, 0.f, 0.f };
+				spline = Line::createLineFromVector(device, splineVertices);
+				lineObjects[3].line = spline;
+
+				for (auto& v : splineVertices)
+					v.color = { 0.f, 1.f, 0.f };
+				spline = Line::calculateSplineEvenlySpaced(device, splineVertices, glm::vec3(1.f), glm::vec3(1.f), 20);
+				lineObjects[4].line = spline;
 
 				// render
 				renderer.beginSwapChainRenderPass(commandBuffer);
@@ -155,43 +193,15 @@ namespace assignment
 				renderer.endFrame();
 			}
 		}
+		vkDeviceWaitIdle(device.device());
 
 		ImGui_ImplVulkan_Shutdown();
 		ImGui_ImplGlfw_Shutdown();
 		ImGui::DestroyContext();
-		vkDeviceWaitIdle(device.device());
 	}
 
 	void Application::loadGameObjects()
 	{
-		std::vector<Line::Vertex> vertices(5);
-		for (auto& v : vertices)
-			v.color = { 1.f, 0.f, 0.f };
-		vertices[0].position = { 0.f,  0.f, 5.f };
-		vertices[1].position = { 1.f,  1.f, -3.f };
-		vertices[2].position = { 2.f, -1.f, 2.f };
-		vertices[3].position = { 3.f,  0.f, 0.f };
-		vertices[4].position = { 4.f,  -2.f, 3.f };
-
-		std::shared_ptr<Line> spline = Line::createLineFromVector(device, vertices);
-		auto gameObject = GameObject::createGameObject();
-		gameObject.line = spline;
-		gameObject.transform.translation = { 0.f, 0.f, 0.f };
-		gameObject.transform.scale = glm::vec3(0.3f);
-		gameObject.transform.rotation = { 0.f, 0.f, 0.f };
-		lineObjects.push_back(std::move(gameObject));
-
-		for (auto& v : vertices)
-			v.color = { 0.f, 1.f, 0.f };
-
-		spline = Line::calculateSplineEvenlySpaced(device, vertices, glm::vec3(1.f), glm::vec3(1.f), 20);
-		gameObject = GameObject::createGameObject();
-		gameObject.line = spline;
-		gameObject.transform.translation = { 0.f, 0.f, 0.f };
-		gameObject.transform.scale = glm::vec3(0.3f);
-		gameObject.transform.rotation = { 0.f, 0.f, 0.f };
-		lineObjects.push_back(std::move(gameObject));
-
 		Line::Vertex v1, v2;
 		v1.position = { -1000.f, 0.f, 0.f };
 		v1.color = { 1.f, 0.f, 0.f };
@@ -238,7 +248,7 @@ namespace assignment
 	{
 		IMGUI_CHECKVERSION();
 
-		std::unique_ptr<DescriptorPool> imguiPool = DescriptorPool::Builder(device)
+		imguiPool = DescriptorPool::Builder(device)
 			.addPoolSize(VK_DESCRIPTOR_TYPE_SAMPLER, SwapChain::MAX_FRAMES_IN_FLIGHT)
 			.addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, SwapChain::MAX_FRAMES_IN_FLIGHT)
 			.addPoolSize(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, SwapChain::MAX_FRAMES_IN_FLIGHT)

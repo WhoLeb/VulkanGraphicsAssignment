@@ -40,5 +40,7 @@ namespace assignment
 		std::vector<GameObject> lineObjects;
 
 		std::unique_ptr<ImageTexture> textureImage;
+
+		std::unique_ptr<DescriptorPool> imguiPool;
 	};
 }
