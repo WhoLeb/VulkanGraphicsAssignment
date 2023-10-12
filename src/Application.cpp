@@ -168,8 +168,8 @@ namespace assignment
 				}
 
 				for (int i = 0; i < vertexCount; i++)
-					ImGui::InputFloat3(std::format("Vertex {} position", i).c_str(), (float*)&splineVertices[i].position);
-
+					ImGui::DragFloat3(std::format("Vertex {} position", i).c_str(), (float*)&splineVertices[i].position, 0.01f);
+				
 				ImGui::End();
 				ImGui::Render();
 
