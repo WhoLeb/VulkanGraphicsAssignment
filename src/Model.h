@@ -18,7 +18,7 @@ namespace assignment
 	class Model : public GraphicsPrimitive
 	{
 	public:
-		struct Builder : public GraphicsPrimitive::Builder
+		struct Builder
 		{
 			std::vector<Vertex> vertices{};
 			std::vector<uint32_t> indices{};

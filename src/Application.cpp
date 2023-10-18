@@ -202,6 +202,12 @@ namespace assignment
 
 	void Application::loadGameObjects()
 	{
+		std::shared_ptr<Model> cube = Model::createModelFromFile(device, "./assets/meshes/cube.obj");
+		auto cubeObject = GameObject::createGameObject();
+		cubeObject.model = cube;
+		cubeObject.transform.scale = glm::vec3(0.2f);
+		gameObjects.push_back(std::move(cubeObject));
+
 		Line::Vertex v1, v2;
 		v1.position = { -1000.f, 0.f, 0.f };
 		v1.color = { 1.f, 0.f, 0.f };

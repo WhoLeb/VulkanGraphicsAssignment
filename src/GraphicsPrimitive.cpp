@@ -2,37 +2,19 @@
 
 #include "utils.h"
 
-#define GLM_ENABLE_EXPERIMENTAL
-#include <glm/gtx/hash.hpp>
 
 #include <cassert>
 #include <cstring>
 
-namespace std
-{
-	template<>
-	struct hash<assignment::GraphicsPrimitive::Vertex> {
-		size_t operator()(assignment::GraphicsPrimitive::Vertex const& vertex) const
-		{
-			size_t seed = 0;
-			assignment::hashCombine(
-				seed,
-				vertex.position,
-				vertex.color,
-				vertex.normal,
-				vertex.uv
-			);
-			return seed;
-		}
-	};
-}
+
 namespace assignment
 {
-	GraphicsPrimitive::GraphicsPrimitive(Device& device, const Builder& builder)
+	GraphicsPrimitive::GraphicsPrimitive(Device& device, const std::vector<Vertex>& vertices, const std::vector<uint32_t>* indices)
 		: device(device)
 	{
-		createVertexBuffers(builder.vertices);
-		createIndexBuffers(builder.indices);
+		createVertexBuffers(vertices);
+		if(indices)
+			createIndexBuffers(*indices);
 	}
 
 	std::vector<VkVertexInputBindingDescription> GraphicsPrimitive::Vertex::getBindingDescriptions()
@@ -95,7 +77,7 @@ namespace assignment
 	{
 		vertexCount = uint32_t(vertices.size());
 
-		assert(vertexCount >= 3 && "Vertex count should at least be 3");
+		assert(vertexCount >= 2 && "Vertex count should at least be 2");
 
 		VkDeviceSize bufferSize = sizeof(Vertex) * vertexCount;
 		uint32_t vertexSize = sizeof(vertices[0]);

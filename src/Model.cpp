@@ -10,8 +10,8 @@
 
 namespace assignment
 {
-	Model::Model(Device& device, const Model::Builder& builder)
-		: GraphicsPrimitive(device, builder)
+	Model::Model(Device& device, const Builder& builder)
+		: GraphicsPrimitive(device, builder.vertices, &builder.indices)
 	{}
 
 	Model::~Model() {}

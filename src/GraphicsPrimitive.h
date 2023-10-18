@@ -4,9 +4,14 @@
 #include "Buffer.h"
 #include "ImageTexture.h"
 
+#include "utils.h"
+
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include "glm/glm.hpp"
+
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/hash.hpp>
 
 #include <memory>
 #include <vector>
@@ -34,13 +39,7 @@ namespace assignment
 			}
 		};
 
-		struct Builder
-		{
-			std::vector<Vertex> vertices{};
-			std::vector<uint32_t> indices{};
-		};
-
-		GraphicsPrimitive(Device& device, const Builder& builder);
+		GraphicsPrimitive(Device& device, const std::vector<Vertex>& vertices, const std::vector<uint32_t>* indices = nullptr);
 
 	public:
 		void bind(VkCommandBuffer commandBuffer);
@@ -60,3 +59,23 @@ namespace assignment
 		uint32_t indexCount;
 	};
 }
+
+namespace std
+{
+	template<>
+	struct hash<assignment::GraphicsPrimitive::Vertex> {
+		size_t operator()(assignment::GraphicsPrimitive::Vertex const& vertex) const
+		{
+			size_t seed = 0;
+			assignment::hashCombine(
+				seed,
+				vertex.position,
+				vertex.color,
+				vertex.normal,
+				vertex.uv
+			);
+			return seed;
+		}
+	};
+}
+
