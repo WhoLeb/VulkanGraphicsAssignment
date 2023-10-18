@@ -91,26 +91,63 @@ namespace assignment
 
 		auto currentTime = std::chrono::high_resolution_clock::now();
 		
-		int vertexCount = 5;
-		std::vector<Line::Vertex> splineVertices(5);
+		int vertexCount = 39;
+		std::vector<Line::Vertex> splineVertices(vertexCount);
 
-		splineVertices[0].position = { 0.f,  0.f, 5.f };
-		splineVertices[1].position = { 1.f,  1.f, -3.f };
-		splineVertices[2].position = { 2.f, -1.f, 2.f };
-		splineVertices[3].position = { 3.f,  0.f, 0.f };
-		splineVertices[4].position = { 4.f,  -2.f, 3.f };
+		splineVertices[0].position = glm::vec3(0.098, 0.062, 0.f);
+		splineVertices[1].position = glm::vec3(0.352, 0.073, 0.f);
+		splineVertices[2].position = glm::vec3(0.422, 0.136, 0.f);
+		splineVertices[3].position = glm::vec3(0.371, 0.085, 0.f);
+		splineVertices[4].position = glm::vec3(0.449, 0.140, 0.f);
+		splineVertices[5].position = glm::vec3(0.352, 0.187, 0.f);
+		splineVertices[6].position = glm::vec3(0.379, 0.202, 0.f);
+		splineVertices[7].position = glm::vec3(0.398, 0.202, 0.f);
+		splineVertices[8].position = glm::vec3(0.266, 0.198, 0.f);
+		splineVertices[9].position = glm::vec3(0.318, 0.345, 0.f);
+		splineVertices[10].position = glm::vec3(0.402, 0.359, 0.f);
+		splineVertices[11].position = glm::vec3(0.361, 0.425, 0.f);
+		splineVertices[12].position = glm::vec3(0.371, 0.521, 0.f);
+		splineVertices[13].position = glm::vec3(0.410, 0.491, 0.f);
+		splineVertices[14].position = glm::vec3(0.410, 0.357, 0.f);
+		splineVertices[15].position = glm::vec3(0.502, 0.482, 0.f);
+		splineVertices[16].position = glm::vec3(0.529, 0.435, 0.f);
+		splineVertices[17].position = glm::vec3(0.426, 0.343, 0.f);
+		splineVertices[18].position = glm::vec3(0.449, 0.343, 0.f);
+		splineVertices[19].position = glm::vec3(0.504, 0.335, 0.f);
+		splineVertices[20].position = glm::vec3(0.664, 0.355, 0.f);
+		splineVertices[21].position = glm::vec3(0.748, 0.208, 0.f);
+		splineVertices[22].position = glm::vec3(0.738, 0.277, 0.f);
+		splineVertices[23].position = glm::vec3(0.787, 0.308, 0.f);
+		splineVertices[24].position = glm::vec3(0.748, 0.183, 0.f);
+		splineVertices[25].position = glm::vec3(0.623, 0.081, 0.f);
+		splineVertices[26].position = glm::vec3(0.557, 0.099, 0.f);
+		splineVertices[27].position = glm::vec3(0.648, 0.116, 0.f);
+		splineVertices[28].position = glm::vec3(0.598, 0.116, 0.f);
+		splineVertices[29].position = glm::vec3(0.566, 0.195, 0.f);
+		splineVertices[30].position = glm::vec3(0.584, 0.228, 0.f);
+		splineVertices[31].position = glm::vec3(0.508, 0.083, 0.f);
+		splineVertices[32].position = glm::vec3(0.457, 0.140, 0.f);
+		splineVertices[33].position = glm::vec3(0.508, 0.130, 0.f);
+		splineVertices[34].position = glm::vec3(0.625, 0.071, 0.f);
+		splineVertices[35].position = glm::vec3(0.818, 0.093, 0.f);
+		splineVertices[36].position = glm::vec3(0.951, 0.066, 0.f);
+		splineVertices[37].position = glm::vec3(0.547, 0.081, 0.f);
+		splineVertices[38].position = glm::vec3(0.098, 0.062, 0.f);
+		for (auto& v : splineVertices)
+			v.position.y *= -1;
 
 		std::shared_ptr<Line> spline = Line::createLineFromVector(device, splineVertices);
 		auto gameObject = GameObject::createGameObject();
 		gameObject.line = spline;
-		gameObject.transform.scale = glm::vec3(0.3f);
+		gameObject.transform.scale = glm::vec3(0.7f);
 		lineObjects.push_back(std::move(gameObject));
 
-		spline = Line::calculateSplineEvenlySpaced(device, splineVertices, glm::vec3(1.f), glm::vec3(1.f), 20);
+		spline = Line::calculateSplineEvenlySpaced(device, splineVertices, glm::vec3(1.f, 0.f, 0.f), glm::vec3(-1.f, 0.f, 0.f), 20);
 		gameObject = GameObject::createGameObject();
 		gameObject.line = spline;
-		gameObject.transform.scale = glm::vec3(0.3f);
+		gameObject.transform.scale = glm::vec3(0.7f);
 		lineObjects.push_back(std::move(gameObject));
+		bool rebuildSpline = true;
 
 		while (!window.shouldClose())
 		{
@@ -165,23 +202,36 @@ namespace assignment
 						vertexCount = 2;
 					}
 					splineVertices.resize(vertexCount);
+					rebuildSpline = true;
 				}
 
 				for (int i = 0; i < vertexCount; i++)
-					ImGui::DragFloat3(std::format("Vertex {} position", i).c_str(), (float*)&splineVertices[i].position, 0.01f);
+				{
+					if (ImGui::DragFloat3(
+						std::format("Vertex {} position", i).c_str(),
+						(float*)&splineVertices[i].position,
+						0.01f))
+					{
+						rebuildSpline = true;
+					}
+				}
 				
 				ImGui::End();
 				ImGui::Render();
 
-				for (auto& v : splineVertices)
-					v.color = { 1.f, 0.f, 0.f };
-				spline = Line::createLineFromVector(device, splineVertices);
-				lineObjects[3].line = spline;
+				if (rebuildSpline)
+				{
+					for (auto& v : splineVertices)
+						v.color = { 1.f, 0.f, 0.f };
+					spline = Line::createLineFromVector(device, splineVertices);
+					lineObjects[3].line = spline;
 
-				for (auto& v : splineVertices)
-					v.color = { 0.f, 1.f, 0.f };
-				spline = Line::calculateSplineEvenlySpaced(device, splineVertices, glm::vec3(1.f), glm::vec3(1.f), 20);
-				lineObjects[4].line = spline;
+					for (auto& v : splineVertices)
+						v.color = { 0.f, 1.f, 0.f };
+					spline = Line::calculateSplineEvenlySpaced(device, splineVertices, glm::vec3(1.f, 0.f, 0.f), glm::vec3(-1.f, 0.f, 0.f), 20);
+					lineObjects[4].line = spline;
+					rebuildSpline = false;
+				}
 
 				// render
 				renderer.beginSwapChainRenderPass(commandBuffer);
@@ -249,17 +299,7 @@ namespace assignment
 		IMGUI_CHECKVERSION();
 
 		imguiPool = DescriptorPool::Builder(device)
-			.addPoolSize(VK_DESCRIPTOR_TYPE_SAMPLER, SwapChain::MAX_FRAMES_IN_FLIGHT)
 			.addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, SwapChain::MAX_FRAMES_IN_FLIGHT)
-			.addPoolSize(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, SwapChain::MAX_FRAMES_IN_FLIGHT)
-			.addPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, SwapChain::MAX_FRAMES_IN_FLIGHT)
-			.addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, SwapChain::MAX_FRAMES_IN_FLIGHT)
-			.addPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, SwapChain::MAX_FRAMES_IN_FLIGHT)
-			.addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, SwapChain::MAX_FRAMES_IN_FLIGHT)
-			.addPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, SwapChain::MAX_FRAMES_IN_FLIGHT)
-			.addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, SwapChain::MAX_FRAMES_IN_FLIGHT)
-			.addPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, SwapChain::MAX_FRAMES_IN_FLIGHT)
-			.addPoolSize(VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, SwapChain::MAX_FRAMES_IN_FLIGHT)
 			.setPoolFlags(VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT)
 			.build();
 

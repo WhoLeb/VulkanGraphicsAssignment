@@ -119,7 +119,7 @@ namespace assignment
 			{
 				auto weightMat = weightMats[(i * taus.size()) + j];
 				auto gMat = gMatrices[i];
-				auto newVertex = weightMat * gMat;
+				Eigen::MatrixXf newVertex = weightMat * gMat;
 				newVertices.push_back(newVertex);
 			}
 		}
