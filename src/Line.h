@@ -31,14 +31,18 @@ namespace assignment
 		static std::unique_ptr<Line> calculateCubicSplineWithCustomStep(Device& device, const std::vector<Vertex>& vertices, glm::vec3 P1, glm::vec3 Pn, const std::vector<float>& taus);
 		static std::unique_ptr<Line> calculateCubicSplineEvenlySpaced(Device& device, const std::vector<Vertex>& vertices, glm::vec3 P1, glm::vec3 Pn, uint32_t n);
 
-		static std::unique_ptr<Line> calculateBSplineWithCustomStep(Device& device, const std::vector<Vertex>& vertices, const std::vector<float>& knots);
-		static std::unique_ptr<Line> calculateBSplineEvenlySpaced(Device& device, const std::vector<Vertex>& vertices, uint32_t n);
+		static std::unique_ptr<Line> calculateBSplineUnordered(Device& device, const std::vector<Vertex>& vertices, uint32_t degree, const std::vector<float>& knots);
+		static std::unique_ptr<Line> calculateBSplineOpened(Device& device, const std::vector<Vertex>& vertices, uint32_t degree, uint32_t subdivisions);
+		static std::unique_ptr<Line> calculateBSplineEvenlySpaced(Device& device, const std::vector<Vertex>& vertices, uint32_t degree, uint32_t n);
 
 	private:
 		static void calculateTs(const std::vector<Vertex>& vertices, std::vector<float>& t);
 		static std::vector<Eigen::MatrixXf> weightMatrices(const std::vector<float>& t, std::vector<float> taus);
 		static Eigen::MatrixXf RMatrix(const Eigen::MatrixXf& vertices, const std::vector<float>& t, const Eigen::Vector3f& P1, const Eigen::Vector3f& Pn);
 		static std::vector<Eigen::MatrixXf> formGMatrices(Eigen::MatrixXf& vertices, Eigen::MatrixXf& tangentVectors);
+
+		static float basisFunction(uint32_t i, uint32_t k, const std::vector<float>& ts, float t);
+		static Vertex calculateBSpline(const std::vector<Vertex>& vertices, uint32_t degree, const std::vector<float>& ts, float t);
 	};
 
 }

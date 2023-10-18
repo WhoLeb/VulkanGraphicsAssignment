@@ -227,12 +227,12 @@ namespace assignment
 					for (auto& v : splineVertices)
 						v.color = { 1.f, 0.f, 0.f };
 					spline = Line::createLineFromVector(device, splineVertices);
-					lineObjects[3].line = spline;
+					lineObjects[4].line = spline;
 
 					for (auto& v : splineVertices)
 						v.color = { 0.f, 1.f, 0.f };
 					spline = Line::calculateCubicSplineEvenlySpaced(device, splineVertices, glm::vec3(1.f), glm::vec3(1.f), 20);
-					lineObjects[4].line = spline;
+					lineObjects[5].line = spline;
 					rebuildSpline = false;
 				}
 
@@ -255,11 +255,24 @@ namespace assignment
 
 	void Application::loadGameObjects()
 	{
-		std::shared_ptr<Model> cube = Model::createModelFromFile(device, "./assets/meshes/cube.obj");
-		auto cubeObject = GameObject::createGameObject();
-		cubeObject.model = cube;
-		cubeObject.transform.scale = glm::vec3(0.1f);
-		gameObjects.push_back(std::move(cubeObject));
+		//std::shared_ptr<Model> cube = Model::createModelFromFile(device, "./assets/meshes/cube.obj");
+		//auto cubeObject = GameObject::createGameObject();
+		//cubeObject.model = cube;
+		//cubeObject.transform.scale = glm::vec3(0.1f);
+		//gameObjects.push_back(std::move(cubeObject));
+
+		std::vector<Line::Vertex> BSplineVertices(4);
+		BSplineVertices[0].position = { 1, 1, 0 };
+		BSplineVertices[1].position = { 2, 3, 0 };
+		BSplineVertices[2].position = { 4, 3, 0 };
+		BSplineVertices[3].position = { 3, 1, 0 };
+		for (auto& v : BSplineVertices)
+			v.color = glm::vec3(1.f);
+		std::shared_ptr<Line> BSpline = Line::calculateBSplineOpened(device, BSplineVertices, 2, 10);
+		auto BSplineObject = GameObject::createGameObject();
+		BSplineObject.line = BSpline;
+		BSplineObject.transform.scale = glm::vec3(0.3f);
+		lineObjects.push_back(std::move(BSplineObject));
 
 		Line::Vertex v1, v2;
 		v1.position = { -1000.f, 0.f, 0.f };

@@ -102,6 +102,22 @@ namespace assignment
 		return calculateCubicSplineWithCustomStep(device, vertices, P1, Pn, taus);
 	}
 
+	std::unique_ptr<Line> Line::calculateBSplineOpened(Device& device, const std::vector<Vertex>& vertices, uint32_t degree, uint32_t subdivisions)
+	{
+		std::vector<float> ts;
+		for (uint32_t i = 0; i < degree; i++)
+			ts.push_back(0.f);
+		for (uint32_t i = degree; i < vertices.size(); i++)
+			ts.push_back(i - degree + 1);
+		for (uint32_t i = vertices.size() + 1; i < vertices.size() + degree + 1; i++)
+			ts.push_back(vertices.size() - degree + 1);
+
+		std::vector<Vertex> newVertexVector;
+		for (uint32_t i = 0; i < subdivisions; i++)
+			newVertexVector.push_back(calculateBSpline(vertices, degree, ts, float(i + 1) / float(vertices.size() - degree + 2)));
+		return std::make_unique<Line>(device, newVertexVector);
+	}
+
 	void Line::calculateTs(const std::vector<Vertex>& vertices, std::vector<float>& t)
 	{
 		for (int i = 0; i < vertices.size() - 1; i++)
@@ -172,6 +188,29 @@ namespace assignment
 			mats.push_back(std::move(mat));
 		}
 		return mats;
+	}
+
+	float Line::basisFunction(uint32_t i, uint32_t k, const std::vector<float>& ts, float t)
+	{
+		if (k == 0)
+		{
+			if (t >= ts[i] && t < ts[i + 1])
+				return 1;
+			else
+				return 0;
+		}
+		return (t - ts[i]) * basisFunction(i, k - 1, ts, t) / (ts[i + k - 1] - ts[i]) +
+			(ts[i + k] - t) * basisFunction(i + 1, k - 1, ts, t) / (ts[i + k] - ts[i + 1]);
+	}
+
+	Line::Vertex Line::calculateBSpline(const std::vector<Vertex>& vertices, uint32_t degree, const std::vector<float>& ts, float t)
+	{
+		Vertex p;
+		p.position = { 0.f, 0.f, 0.f };
+
+		for (uint32_t i = 0; i < vertices.size(); i++)
+			p.position += vertices[i].position * basisFunction(i, degree, ts, t);
+		return p;
 	}
 
 }
