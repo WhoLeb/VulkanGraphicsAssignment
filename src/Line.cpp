@@ -8,26 +8,11 @@
 #include <cassert>
 #include <cstring>
 
-namespace std
-{
-	template<>
-	struct hash<assignment::Line::Vertex> {
-		size_t operator()(assignment::Line::Vertex const& vertex) const
-		{
-			size_t seed = 0;
-			assignment::hashCombine(seed, vertex.position, vertex.color, vertex.normal);
-			return seed;
-		}
-	};
-}
-
 namespace assignment
 {
 	Line::Line(Device& device, const std::vector<Vertex>& vertices)
-		: device(device)
-	{
-		createVertexBuffers(vertices);
-	}
+		: GraphicsPrimitive(device, vertices)
+	{}
 
 	Line::~Line() {}
 
@@ -36,47 +21,7 @@ namespace assignment
 		return std::make_unique<Line>(device, vertices);
 	}
 
-	void Line::bind(VkCommandBuffer commandBuffer)
-	{
-		VkBuffer buffers[] = { vertexBuffer->getBuffer() };
-		VkDeviceSize offsets[] = { 0 };
-
-		vkCmdBindVertexBuffers(commandBuffer, 0, 1, buffers, offsets);
-	}
-
-	void Line::draw(VkCommandBuffer commandBuffer)
-	{
-		vkCmdDraw(commandBuffer, vertexCount, 1, 0, 0);
-	}
-
-	void Line::createVertexBuffers(const std::vector<Vertex>& vertices)
-	{
-		vertexCount = uint32_t(vertices.size());
-
-		VkDeviceSize bufferSize = sizeof(Vertex) * vertexCount;
-		uint32_t vertexSize = sizeof(vertices[0]);
-
-		Buffer stagingBuffer(
-			device,
-			vertexSize,
-			vertexCount,
-			VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-		
-		stagingBuffer.map();
-		stagingBuffer.writeToBuffer((void*)vertices.data());
-
-		vertexBuffer = std::make_unique<Buffer>(
-			device,
-			vertexSize,
-			vertexCount,
-			VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-
-		device.copyBuffer(stagingBuffer.getBuffer(), vertexBuffer->getBuffer(), bufferSize);
-	}
-
-	std::unique_ptr<Line> Line::calculateSplineWithCustomStep(Device& device, const std::vector<Vertex>& vertices, glm::vec3 P1, glm::vec3 Pn, const std::vector<float>& taus)
+	std::unique_ptr<Line> Line::calculateCubicSplineWithCustomStep(Device& device, const std::vector<Vertex>& vertices, glm::vec3 P1, glm::vec3 Pn, const std::vector<float>& taus)
 	{
 		Eigen::MatrixXf _vertices = Eigen::MatrixXf::Zero(vertices.size(), 3);
 		for (uint64_t i = 0; i < vertices.size(); i++)
@@ -148,13 +93,13 @@ namespace assignment
 		return std::make_unique<Line>(device, newVertexArray);
 	}
 
-	std::unique_ptr<Line> Line::calculateSplineEvenlySpaced(Device& device, const std::vector<Vertex>& vertices, glm::vec3 P1, glm::vec3 Pn, uint32_t n)
+	std::unique_ptr<Line> Line::calculateCubicSplineEvenlySpaced(Device& device, const std::vector<Vertex>& vertices, glm::vec3 P1, glm::vec3 Pn, uint32_t n)
 	{
 		std::vector<float> taus;
 		for (int i = 0; i < n; i++)
 			taus.push_back(float(i + 1) / float(n+1));
 
-		return calculateSplineWithCustomStep(device, vertices, P1, Pn, taus);
+		return calculateCubicSplineWithCustomStep(device, vertices, P1, Pn, taus);
 	}
 
 	void Line::calculateTs(const std::vector<Vertex>& vertices, std::vector<float>& t)
@@ -229,35 +174,4 @@ namespace assignment
 		return mats;
 	}
 
-	std::vector<VkVertexInputBindingDescription> Line::Vertex::getBindingDescriptions()
-	{
-		std::vector<VkVertexInputBindingDescription> bindingDescriptions(1);
-		bindingDescriptions[0].binding = 0;
-		bindingDescriptions[0].stride = sizeof(Vertex);
-		bindingDescriptions[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-
-		return bindingDescriptions;
-	}
-
-	std::vector<VkVertexInputAttributeDescription> Line::Vertex::getAttributeDescriptions()
-	{
-		std::vector<VkVertexInputAttributeDescription> attributeDescriptions(3);
-
-		attributeDescriptions[0].binding = 0;
-		attributeDescriptions[0].location = 0;
-		attributeDescriptions[0].offset = offsetof(Vertex, position);
-		attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-
-		attributeDescriptions[1].binding = 0;
-		attributeDescriptions[1].location = 1;
-		attributeDescriptions[1].offset = offsetof(Vertex, color);
-		attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-
-		attributeDescriptions[2].binding = 0;
-		attributeDescriptions[2].location = 2;
-		attributeDescriptions[2].offset = offsetof(Vertex, normal);
-		attributeDescriptions[2].format = VK_FORMAT_R32G32B32_SFLOAT; 
-
-		return attributeDescriptions;
-	}
 }

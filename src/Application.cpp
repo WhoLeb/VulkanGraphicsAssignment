@@ -142,7 +142,7 @@ namespace assignment
 		gameObject.transform.scale = glm::vec3(0.7f);
 		lineObjects.push_back(std::move(gameObject));
 
-		spline = Line::calculateSplineEvenlySpaced(device, splineVertices, glm::vec3(1.f, 0.f, 0.f), glm::vec3(-1.f, 0.f, 0.f), 20);
+		spline = Line::calculateCubicSplineEvenlySpaced(device, splineVertices, glm::vec3(1.f), glm::vec3(1.f), 20);
 		gameObject = GameObject::createGameObject();
 		gameObject.line = spline;
 		gameObject.transform.scale = glm::vec3(0.7f);
@@ -228,7 +228,7 @@ namespace assignment
 
 					for (auto& v : splineVertices)
 						v.color = { 0.f, 1.f, 0.f };
-					spline = Line::calculateSplineEvenlySpaced(device, splineVertices, glm::vec3(1.f, 0.f, 0.f), glm::vec3(-1.f, 0.f, 0.f), 20);
+					spline = Line::calculateCubicSplineEvenlySpaced(device, splineVertices, glm::vec3(1.f), glm::vec3(1.f), 20);
 					lineObjects[4].line = spline;
 					rebuildSpline = false;
 				}
@@ -252,6 +252,12 @@ namespace assignment
 
 	void Application::loadGameObjects()
 	{
+		std::shared_ptr<Model> cube = Model::createModelFromFile(device, "./assets/meshes/cube.obj");
+		auto cubeObject = GameObject::createGameObject();
+		cubeObject.model = cube;
+		cubeObject.transform.scale = glm::vec3(0.2f);
+		gameObjects.push_back(std::move(cubeObject));
+
 		Line::Vertex v1, v2;
 		v1.position = { -1000.f, 0.f, 0.f };
 		v1.color = { 1.f, 0.f, 0.f };
