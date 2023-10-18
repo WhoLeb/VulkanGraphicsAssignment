@@ -61,7 +61,8 @@ namespace assignment
 			vertexSize,
 			vertexCount,
 			VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
+		);
 		
 		stagingBuffer.map();
 		stagingBuffer.writeToBuffer((void*)vertices.data());
@@ -71,12 +72,13 @@ namespace assignment
 			vertexSize,
 			vertexCount,
 			VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
+			);
 
 		device.copyBuffer(stagingBuffer.getBuffer(), vertexBuffer->getBuffer(), bufferSize);
 	}
 
-	std::unique_ptr<Line> Line::calculateSplineWithCustomStep(Device& device, const std::vector<Vertex>& vertices, glm::vec3 P1, glm::vec3 Pn, const std::vector<float>& taus)
+	std::unique_ptr<Line> Line::calculateCubicSplineWithCustomStep(Device& device, const std::vector<Vertex>& vertices, glm::vec3 P1, glm::vec3 Pn, const std::vector<float>& taus)
 	{
 		Eigen::MatrixXf _vertices = Eigen::MatrixXf::Zero(vertices.size(), 3);
 		for (uint64_t i = 0; i < vertices.size(); i++)
@@ -148,13 +150,13 @@ namespace assignment
 		return std::make_unique<Line>(device, newVertexArray);
 	}
 
-	std::unique_ptr<Line> Line::calculateSplineEvenlySpaced(Device& device, const std::vector<Vertex>& vertices, glm::vec3 P1, glm::vec3 Pn, uint32_t n)
+	std::unique_ptr<Line> Line::calculateCubicSplineEvenlySpaced(Device& device, const std::vector<Vertex>& vertices, glm::vec3 P1, glm::vec3 Pn, uint32_t n)
 	{
 		std::vector<float> taus;
 		for (int i = 0; i < n; i++)
 			taus.push_back(float(i + 1) / float(n+1));
 
-		return calculateSplineWithCustomStep(device, vertices, P1, Pn, taus);
+		return calculateCubicSplineWithCustomStep(device, vertices, P1, Pn, taus);
 	}
 
 	void Line::calculateTs(const std::vector<Vertex>& vertices, std::vector<float>& t)
@@ -260,4 +262,6 @@ namespace assignment
 
 		return attributeDescriptions;
 	}
+
+
 }

@@ -106,7 +106,7 @@ namespace assignment
 		gameObject.transform.scale = glm::vec3(0.3f);
 		lineObjects.push_back(std::move(gameObject));
 
-		spline = Line::calculateSplineEvenlySpaced(device, splineVertices, glm::vec3(1.f), glm::vec3(1.f), 20);
+		spline = Line::calculateCubicSplineEvenlySpaced(device, splineVertices, glm::vec3(1.f), glm::vec3(1.f), 20);
 		gameObject = GameObject::createGameObject();
 		gameObject.line = spline;
 		gameObject.transform.scale = glm::vec3(0.3f);
@@ -180,7 +180,7 @@ namespace assignment
 
 				for (auto& v : splineVertices)
 					v.color = { 0.f, 1.f, 0.f };
-				spline = Line::calculateSplineEvenlySpaced(device, splineVertices, glm::vec3(1.f), glm::vec3(1.f), 20);
+				spline = Line::calculateCubicSplineEvenlySpaced(device, splineVertices, glm::vec3(1.f), glm::vec3(1.f), 20);
 				lineObjects[4].line = spline;
 
 				// render

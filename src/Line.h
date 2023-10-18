@@ -49,8 +49,11 @@ namespace assignment
 
 		void createVertexBuffers(const std::vector<Vertex>& vertices);
 
-		static std::unique_ptr<Line> calculateSplineWithCustomStep(Device& device, const std::vector<Vertex>& vertices, glm::vec3 P1, glm::vec3 Pn, const std::vector<float>& taus);
-		static std::unique_ptr<Line> calculateSplineEvenlySpaced(Device& device, const std::vector<Vertex>& vertices, glm::vec3 P1, glm::vec3 Pn, uint32_t n);
+		static std::unique_ptr<Line> calculateCubicSplineWithCustomStep(Device& device, const std::vector<Vertex>& vertices, glm::vec3 P1, glm::vec3 Pn, const std::vector<float>& taus);
+		static std::unique_ptr<Line> calculateCubicSplineEvenlySpaced(Device& device, const std::vector<Vertex>& vertices, glm::vec3 P1, glm::vec3 Pn, uint32_t n);
+
+		static std::unique_ptr<Line> calculateBSplineWithCustomStep(Device& device, const std::vector<Vertex>& vertices, const std::vector<float>& knots);
+		static std::unique_ptr<Line> calculateBSplineEvenlySpaced(Device& device, const std::vector<Vertex>& vertices, uint32_t n);
 
 	private:
 		static void calculateTs(const std::vector<Vertex>& vertices, std::vector<float>& t);
