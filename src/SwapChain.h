@@ -27,7 +27,7 @@ namespace assignment
 		VkFramebuffer getFrameBuffer(int index) { return swapChainFramebuffers[index]; }
 		VkRenderPass getRenderPass() { return renderPass; }
 		VkImageView getImageView(int index) { return swapChainImageViews[index]; }
-		uint32_t imageCount() { return swapChainImages.size(); }
+		uint32_t imageCount() { return uint32_t(swapChainImages.size()); }
 		VkFormat getSwapChainImageFormat() { return swapChainImageFormat; }
 		VkExtent2D getSwapChainExtent() { return swapChainExtent; }
 		uint32_t width() { return swapChainExtent.width; }

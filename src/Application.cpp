@@ -188,7 +188,7 @@ namespace assignment
 				ImGui_ImplGlfw_NewFrame();
 				ImGui::NewFrame();
 
-				//ImGui::ShowDemoWindow();
+				ImGui::ShowDemoWindow();
 				ImGui::Begin("Frame time");
 				ImGui::Text(std::to_string(frameTime).c_str());
 				ImGui::End();
@@ -205,14 +205,17 @@ namespace assignment
 					rebuildSpline = true;
 				}
 
-				for (int i = 0; i < vertexCount; i++)
+				if (ImGui::CollapsingHeader("Vertex positions"))
 				{
-					if (ImGui::DragFloat3(
-						std::format("Vertex {} position", i).c_str(),
-						(float*)&splineVertices[i].position,
-						0.01f))
+					for (int i = 0; i < vertexCount; i++)
 					{
-						rebuildSpline = true;
+						if (ImGui::DragFloat3(
+							std::format("Vertex {} position", i).c_str(),
+							(float*)&splineVertices[i].position,
+							0.01f))
+						{
+							rebuildSpline = true;
+						}
 					}
 				}
 				
@@ -255,7 +258,7 @@ namespace assignment
 		std::shared_ptr<Model> cube = Model::createModelFromFile(device, "./assets/meshes/cube.obj");
 		auto cubeObject = GameObject::createGameObject();
 		cubeObject.model = cube;
-		cubeObject.transform.scale = glm::vec3(0.2f);
+		cubeObject.transform.scale = glm::vec3(0.1f);
 		gameObjects.push_back(std::move(cubeObject));
 
 		Line::Vertex v1, v2;

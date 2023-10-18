@@ -96,7 +96,7 @@ namespace assignment
 	std::unique_ptr<Line> Line::calculateCubicSplineEvenlySpaced(Device& device, const std::vector<Vertex>& vertices, glm::vec3 P1, glm::vec3 Pn, uint32_t n)
 	{
 		std::vector<float> taus;
-		for (int i = 0; i < n; i++)
+		for (uint32_t i = 0; i < n; i++)
 			taus.push_back(float(i + 1) / float(n+1));
 
 		return calculateCubicSplineWithCustomStep(device, vertices, P1, Pn, taus);
@@ -116,10 +116,10 @@ namespace assignment
 			for (auto tau : taus)
 			{
 				Eigen::MatrixXf weightMatrix = Eigen::MatrixXf::Zero(1, 4);
-				weightMatrix (0, 0) = 2 * glm::pow(tau, 3) - 3 * glm::pow(tau, 2) + 1;
-				weightMatrix (0, 1) = -2 * glm::pow(tau, 3) + 3 * glm::pow(tau, 2);
-				weightMatrix (0, 2) = tau * (glm::pow(tau, 2) - 2 * tau + 1) * t[i + 1];
-				weightMatrix (0, 3) = tau * (glm::pow(tau, 2) - tau) * t[i + 1];
+				weightMatrix (0, 0) = float(2 * glm::pow(tau, 3) - 3 * glm::pow(tau, 2) + 1);
+				weightMatrix (0, 1) = float(- 2 * glm::pow(tau, 3) + 3 * glm::pow(tau, 2));
+				weightMatrix (0, 2) = float(tau * (glm::pow(tau, 2) - 2 * tau + 1) * t[i + 1]);
+				weightMatrix (0, 3) = float(tau * (glm::pow(tau, 2) - tau) * t[i + 1]);
 				weightMatrices.push_back(std::move(weightMatrix));
 			}
 		}
@@ -160,9 +160,9 @@ namespace assignment
 	{
 		std::vector<Eigen::MatrixXf> mats;
 
-		const int n = vertices.rows();
+		const uint32_t n = uint32_t(vertices.rows());
 
-		for (int k = 0; k < n-1; k++)
+		for (uint32_t k = 0; k < n-1; k++)
 		{
 			Eigen::MatrixXf mat = Eigen::MatrixXf::Zero(4, 3);
 			mat.row(0) = vertices.row(k);

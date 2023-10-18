@@ -124,7 +124,7 @@ namespace assignment
 
 	void Renderer::freeCommandBuffers()
 	{
-		vkFreeCommandBuffers(device.device(), device.getCommandPool(), commandBuffers.size(), commandBuffers.data());
+		vkFreeCommandBuffers(device.device(), device.getCommandPool(), uint32_t(commandBuffers.size()), commandBuffers.data());
 		commandBuffers.clear();
 	}
 
