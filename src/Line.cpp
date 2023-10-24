@@ -105,16 +105,17 @@ namespace assignment
 	std::unique_ptr<Line> Line::calculateBSplineOpened(Device& device, const std::vector<Vertex>& vertices, uint32_t degree, uint32_t subdivisions)
 	{
 		std::vector<float> ts;
-		for (uint32_t i = 0; i < degree; i++)
+		for (uint32_t i = 1; i <= degree; i++)
 			ts.push_back(0.f);
-		for (uint32_t i = degree; i < vertices.size(); i++)
-			ts.push_back(i - degree + 1);
-		for (uint32_t i = vertices.size() + 1; i < vertices.size() + degree + 1; i++)
+		for (uint32_t i = degree + 1; i <= vertices.size(); i++)
+			ts.push_back(i - degree);
+		for (uint32_t i = vertices.size() + 1; i <= vertices.size() + degree; i++)
 			ts.push_back(vertices.size() - degree + 1);
 
 		std::vector<Vertex> newVertexVector;
 		for (uint32_t i = 0; i < subdivisions; i++)
-			newVertexVector.push_back(calculateBSpline(vertices, degree, ts, float(i + 1) / float(vertices.size() - degree + 2)));
+			newVertexVector.push_back(calculateBSpline(vertices, degree - 1, ts, float(vertices.size() - degree + 1) * float(i) / float(subdivisions)));
+		newVertexVector.push_back(*(vertices.end()-1));
 		return std::make_unique<Line>(device, newVertexVector);
 	}
 
@@ -199,14 +200,21 @@ namespace assignment
 			else
 				return 0;
 		}
-		return (t - ts[i]) * basisFunction(i, k - 1, ts, t) / (ts[i + k - 1] - ts[i]) +
-			(ts[i + k] - t) * basisFunction(i + 1, k - 1, ts, t) / (ts[i + k] - ts[i + 1]);
+		float firstFractionTop = (t - ts[i]) * basisFunction(i, k - 1, ts, t);
+		float firstFractionBottom = (ts[i + k] - ts[i]);
+		float firstFraction = firstFractionBottom == 0 ? 0 : firstFractionTop / firstFractionBottom;
+		float secondFractionTop = (ts[i + k + 1] - t) * basisFunction(i + 1, k - 1, ts, t);
+		float secondFractionBottom = (ts[i + k + 1] - ts[i + 1]);
+		float secondFraction = secondFractionBottom == 0 ? 0 : secondFractionTop / secondFractionBottom;
+
+		return firstFraction + secondFraction;
 	}
 
 	Line::Vertex Line::calculateBSpline(const std::vector<Vertex>& vertices, uint32_t degree, const std::vector<float>& ts, float t)
 	{
 		Vertex p;
 		p.position = { 0.f, 0.f, 0.f };
+		p.color = vertices[0].color;
 
 		for (uint32_t i = 0; i < vertices.size(); i++)
 			p.position += vertices[i].position * basisFunction(i, degree, ts, t);

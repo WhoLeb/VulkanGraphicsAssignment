@@ -36,18 +36,30 @@ namespace assignment
 			return GameObject{ currentId++ };
 		}
 
+		static GameObject createGameObject(const std::string& name)
+		{
+			GameObject go = createGameObject();
+			go.name = name;
+			return go;
+		}
+
 		const id_t getId() { return id; }
+		const std::string getName() { return name; }
+		void changeVisibility() { visible = !visible; }
 
 		std::shared_ptr<Model> model{};
 		std::shared_ptr<Line> line{};
 		glm::vec3 color{};
 		TransformComponent transform{};
+		bool visible = true;
 
 	private:
-		GameObject(id_t objId) : id(objId) {}
+		GameObject(id_t objId) : id(objId) { name = std::to_string(objId); }
+		GameObject(id_t objId, const std::string& name) : id(objId), name(name) {}
 
 	private:
 		id_t id;
+		std::string name;
 
 	};
 }

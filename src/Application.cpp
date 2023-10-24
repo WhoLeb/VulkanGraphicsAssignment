@@ -137,17 +137,30 @@ namespace assignment
 			v.position.y *= -1;
 
 		std::shared_ptr<Line> spline = Line::createLineFromVector(device, splineVertices);
-		auto gameObject = GameObject::createGameObject();
+		auto gameObject = GameObject::createGameObject("SplineBase");
 		gameObject.line = spline;
 		gameObject.transform.scale = glm::vec3(0.7f);
 		lineObjects.push_back(std::move(gameObject));
 
 		spline = Line::calculateCubicSplineEvenlySpaced(device, splineVertices, glm::vec3(1.f), glm::vec3(1.f), 20);
-		gameObject = GameObject::createGameObject();
+		gameObject = GameObject::createGameObject("CubicSpline");
+		gameObject.line = spline;
+		gameObject.transform.scale = glm::vec3(0.7f);
+		lineObjects.push_back(std::move(gameObject));
+
+		int BSplineSubdivisions = 100;
+		int BSplineDegree = 4;
+		splineVertices[0].color = { 1.f, 0.f, 1.f };
+		spline = Line::calculateBSplineOpened(device, splineVertices, BSplineDegree, BSplineSubdivisions);
+		gameObject = GameObject::createGameObject("B-Spline");
 		gameObject.line = spline;
 		gameObject.transform.scale = glm::vec3(0.7f);
 		lineObjects.push_back(std::move(gameObject));
 		bool rebuildSpline = true;
+
+		std::vector<Line::Vertex> pointV(2);
+		std::shared_ptr<Line> point = Line::createLineFromVector(device, pointV);
+
 
 		while (!window.shouldClose())
 		{
@@ -188,7 +201,7 @@ namespace assignment
 				ImGui_ImplGlfw_NewFrame();
 				ImGui::NewFrame();
 
-				ImGui::ShowDemoWindow();
+				//ImGui::ShowDemoWindow();
 				ImGui::Begin("Frame time");
 				ImGui::Text(std::to_string(frameTime).c_str());
 				ImGui::End();
@@ -218,6 +231,38 @@ namespace assignment
 						}
 					}
 				}
+
+				if (ImGui::InputInt("B-Spline subdivisions", &BSplineSubdivisions)) rebuildSpline = true;
+				if (ImGui::InputInt("B-Spline degree", &BSplineDegree, 1, 3)) rebuildSpline = true;
+
+				bool ph1, ph2, ph3;
+				if (ImGui::Checkbox("Show base line", &ph1))
+				{
+					for (uint32_t i = 0; i < lineObjects.size(); i++)
+						if (lineObjects[i].getName() == "SplineBase")
+						{
+							lineObjects[i].changeVisibility();
+							break;
+						}
+				};
+				if (ImGui::Checkbox("Show Cubic Spline", &ph2))
+				{
+					for (uint32_t i = 0; i < lineObjects.size(); i++)
+						if (lineObjects[i].getName() == "CubicSpline")
+						{
+							lineObjects[i].changeVisibility();
+							break;
+						}
+				};
+				if (ImGui::Checkbox("Show B-Spline", &ph3))
+				{
+					for (uint32_t i = 0; i < lineObjects.size(); i++)
+						if (lineObjects[i].getName() == "B-Spline")
+						{
+							lineObjects[i].changeVisibility();
+							break;
+						}
+				};
 				
 				ImGui::End();
 				ImGui::Render();
@@ -227,11 +272,16 @@ namespace assignment
 					for (auto& v : splineVertices)
 						v.color = { 1.f, 0.f, 0.f };
 					spline = Line::createLineFromVector(device, splineVertices);
-					lineObjects[4].line = spline;
+					lineObjects[3].line = spline;
 
 					for (auto& v : splineVertices)
 						v.color = { 0.f, 1.f, 0.f };
 					spline = Line::calculateCubicSplineEvenlySpaced(device, splineVertices, glm::vec3(1.f), glm::vec3(1.f), 20);
+					lineObjects[4].line = spline;
+
+					for (auto& v : splineVertices)
+						v.color = { 1.f, 0.f, 1.f };
+					spline = Line::calculateBSplineOpened(device, splineVertices, BSplineDegree, BSplineSubdivisions);
 					lineObjects[5].line = spline;
 					rebuildSpline = false;
 				}
@@ -239,7 +289,7 @@ namespace assignment
 				// render
 				renderer.beginSwapChainRenderPass(commandBuffer);
 				simpleRenderSystem.renderGameObjects(frameInfo, gameObjects);
-				linesRenderSystem.renderSplineObjects(frameInfo, lineObjects);
+				linesRenderSystem.renderLineObjects(frameInfo, lineObjects);
 
 				ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
 				renderer.endSwapChainRenderPass(commandBuffer);
@@ -258,21 +308,10 @@ namespace assignment
 		//std::shared_ptr<Model> cube = Model::createModelFromFile(device, "./assets/meshes/cube.obj");
 		//auto cubeObject = GameObject::createGameObject();
 		//cubeObject.model = cube;
-		//cubeObject.transform.scale = glm::vec3(0.1f);
+		//cubeObject.transform.scale = glm::vec3(0.005f);
+		//cubeObject.transform.translation = { .6f, -.1f, 0.f };
 		//gameObjects.push_back(std::move(cubeObject));
 
-		std::vector<Line::Vertex> BSplineVertices(4);
-		BSplineVertices[0].position = { 1, 1, 0 };
-		BSplineVertices[1].position = { 2, 3, 0 };
-		BSplineVertices[2].position = { 4, 3, 0 };
-		BSplineVertices[3].position = { 3, 1, 0 };
-		for (auto& v : BSplineVertices)
-			v.color = glm::vec3(1.f);
-		std::shared_ptr<Line> BSpline = Line::calculateBSplineOpened(device, BSplineVertices, 2, 10);
-		auto BSplineObject = GameObject::createGameObject();
-		BSplineObject.line = BSpline;
-		BSplineObject.transform.scale = glm::vec3(0.3f);
-		lineObjects.push_back(std::move(BSplineObject));
 
 		Line::Vertex v1, v2;
 		v1.position = { -1000.f, 0.f, 0.f };

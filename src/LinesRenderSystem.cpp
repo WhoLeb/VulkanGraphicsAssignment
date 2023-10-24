@@ -23,7 +23,7 @@ namespace assignment
 		vkDestroyPipelineLayout(device.device(), pipelineLayout, nullptr);
 	}
 
-	void LinesRenderSystem::renderSplineObjects(FrameInfo& frameInfo, std::vector<GameObject>& gameObjects)
+	void LinesRenderSystem::renderLineObjects(FrameInfo& frameInfo, std::vector<GameObject>& gameObjects)
 	{
 		pipeline->bind(frameInfo.commandBuffer);
 
@@ -37,6 +37,9 @@ namespace assignment
 
 		for (auto& obj : gameObjects)
 		{
+			if (!obj.visible)
+				continue;
+
 			SimplePushConstantData push{};
 			push.modelMatrix = obj.transform.mat4();
 			push.normalMatrix = obj.transform.normalMatrix();

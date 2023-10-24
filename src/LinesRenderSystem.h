@@ -20,7 +20,7 @@ namespace assignment
 		NO_COPY(LinesRenderSystem);
 
 	public:
-		void renderSplineObjects(FrameInfo& frameInfo, std::vector<GameObject>& gameObjects);
+		void renderLineObjects(FrameInfo& frameInfo, std::vector<GameObject>& gameObjects);
 
 	private:
 		void createPipelineLayout(VkDescriptorSetLayout globalSetLayout);
