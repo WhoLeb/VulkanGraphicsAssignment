@@ -158,10 +158,6 @@ namespace assignment
 		lineObjects.push_back(std::move(gameObject));
 		bool rebuildSpline = true;
 
-		std::vector<Line::Vertex> pointV(2);
-		std::shared_ptr<Line> point = Line::createLineFromVector(device, pointV);
-
-
 		while (!window.shouldClose())
 		{
 			glfwPollEvents();

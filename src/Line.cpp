@@ -102,6 +102,14 @@ namespace assignment
 		return calculateCubicSplineWithCustomStep(device, vertices, P1, Pn, taus);
 	}
 
+	std::unique_ptr<Line> Line::calculateBSplineUnordered(Device& device, const std::vector<Vertex>& vertices, uint32_t degree, const std::vector<float>& knots, uint32_t subdivisions)
+	{
+		assert(knots.size() >= vertices.size() + degree + 1 && "Not enough knots");
+
+		std::vector<Vertex> newVertexVector = calculateBSpline(vertices, degree-1, knots, subdivisions);
+		return std::make_unique<Line>(device, newVertexVector);
+	}
+
 	std::unique_ptr<Line> Line::calculateBSplineOpened(Device& device, const std::vector<Vertex>& vertices, uint32_t degree, uint32_t subdivisions)
 	{
 		std::vector<float> ts;
@@ -112,10 +120,16 @@ namespace assignment
 		for (uint32_t i = vertices.size() + 1; i <= vertices.size() + degree; i++)
 			ts.push_back(vertices.size() - degree + 1);
 
-		std::vector<Vertex> newVertexVector;
-		for (uint32_t i = 0; i < subdivisions; i++)
-			newVertexVector.push_back(calculateBSpline(vertices, degree - 1, ts, float(vertices.size() - degree + 1) * float(i) / float(subdivisions)));
-		newVertexVector.push_back(*(vertices.end()-1));
+		std::vector<Vertex> newVertexVector = calculateBSpline(vertices, degree-1, ts, subdivisions);
+		return std::make_unique<Line>(device, newVertexVector);
+	}
+
+	std::unique_ptr<Line> Line::calculateBSplineEvenlySpaced(Device& device, const std::vector<Vertex>& vertices, uint32_t degree, uint32_t n, uint32_t subdivisions)
+	{
+		std::vector<float> ts;
+		for (int i = 0; i < vertices.size() + degree + 1; i++)
+			ts.push_back(static_cast<float>(i));
+		std::vector<Vertex> newVertexVector = calculateBSpline(vertices, degree-1, ts, subdivisions);
 		return std::make_unique<Line>(device, newVertexVector);
 	}
 
@@ -210,15 +224,22 @@ namespace assignment
 		return firstFraction + secondFraction;
 	}
 
-	Line::Vertex Line::calculateBSpline(const std::vector<Vertex>& vertices, uint32_t degree, const std::vector<float>& ts, float t)
+	std::vector<Line::Vertex> Line::calculateBSpline(const std::vector<Vertex>& vertices, uint32_t degree, const std::vector<float>& ts, uint32_t subdivisions)
 	{
-		Vertex p;
-		p.position = { 0.f, 0.f, 0.f };
-		p.color = vertices[0].color;
+		std::vector<Vertex> newVertexVector;
+		for (uint32_t i = 0; i < subdivisions; i++)
+		{
+			Vertex p;
+			p.position = { 0.f, 0.f, 0.f };
+			p.color = vertices[0].color;
 
-		for (uint32_t i = 0; i < vertices.size(); i++)
-			p.position += vertices[i].position * basisFunction(i, degree, ts, t);
-		return p;
+			for (uint32_t j = 0; j < vertices.size(); j++)
+				p.position += vertices[j].position * basisFunction(j, degree, ts, float(vertices.size() - degree) * float(i) / float(subdivisions));
+			newVertexVector.emplace_back(p);
+		}
+		newVertexVector.push_back(*(vertices.end()-1));
+
+		return newVertexVector;
 	}
 
 }
