@@ -158,6 +158,71 @@ namespace assignment
 		lineObjects.push_back(std::move(gameObject));
 		bool rebuildSpline = true;
 
+		uint32_t rows = 30, cols = 40;
+		std::vector<Model::Vertex> surfaceVertices(rows * cols);
+		for (int i = 0; i < rows; i++)
+		{
+			for (int j = 0; j < cols; j++)
+			{
+				surfaceVertices[i * cols + j].position = { float(j), 0.f, float(i) };
+				surfaceVertices[i * cols + j].color = { 1.f, 0.117f, 0.25f };
+			}
+		}
+		surfaceVertices[6].position += glm::vec3(0.f, -1.f, 0.f);
+
+		std::vector<uint32_t> indices;
+		for (int i = 0; i < rows - 1; i++)
+		{
+			for (int j = 0; j < cols - 1; j++)
+			{
+				indices.push_back(i * cols + j);
+				indices.push_back(i * cols + j + 1);
+				indices.push_back((i + 1) * cols + j);
+				indices.push_back(i * cols + j + 1);
+				indices.push_back((i + 1) * cols + j + 1);
+				indices.push_back((i + 1) * cols + j);
+			}
+		}
+		uint32_t triangleCount = indices.size()/3;
+		for (int i = 0; i < triangleCount; i++)
+		{
+			uint32_t triangleIndex = i * 3;
+			glm::vec3 vec1 = surfaceVertices[indices[triangleIndex]].position;
+			glm::vec3 vec2 = surfaceVertices[indices[triangleIndex + 1]].position;
+			glm::vec3 vec3 = surfaceVertices[indices[triangleIndex + 2]].position;
+
+			glm::vec3 side1 = vec2 - vec1;
+			glm::vec3 side2 = vec3 - vec1;
+			glm::vec3 triangleNormal = glm::cross(side1, side2);
+
+			surfaceVertices[indices[triangleIndex]].normal += triangleNormal;
+			surfaceVertices[indices[triangleIndex + 1]].normal += triangleNormal;
+			surfaceVertices[indices[triangleIndex + 2]].normal += triangleNormal;
+		}
+		for (auto& v : surfaceVertices)
+			v.normal = glm::normalize(v.normal);
+
+		gameObject = GameObject::createGameObject("Surface");
+		gameObject.model = Model::createSurfaceFromVector(device, surfaceVertices, rows, cols);
+		gameObject.transform.scale = glm::vec3(1.f);
+		gameObjects.push_back(std::move(gameObject));
+
+		for (uint32_t i = 0; i < rows * cols; i++)
+		{
+			auto pos = surfaceVertices[i].position;
+			auto normal = surfaceVertices[i].normal;
+			std::vector<Line::Vertex> norm(2);
+			norm[0].position = pos;
+			norm[1].position = pos + normal;
+			for (auto& n : norm)
+				n.color = glm::abs(normal);
+			gameObject = GameObject::createGameObject();
+			std::shared_ptr<Line> normalL = Line::createLineFromVector(device, norm);
+			gameObject.line = normalL;
+			gameObject.transform.scale = glm::vec3(1.f);
+			lineObjects.push_back(std::move(gameObject));
+		}
+
 		while (!window.shouldClose())
 		{
 			glfwPollEvents();
@@ -191,7 +256,7 @@ namespace assignment
 				ubo.lightDirection = glm::vec3(1.f, -1.f, -1.f);
 
 				uboBuffers[frameIndex]->writeToBuffer(&ubo);
-				uboBuffers[frameIndex]->flush(); 
+				uboBuffers[frameIndex]->flush();
 
 				ImGui_ImplVulkan_NewFrame();
 				ImGui_ImplGlfw_NewFrame();
@@ -201,7 +266,7 @@ namespace assignment
 				ImGui::Begin("Frame time");
 				ImGui::Text(std::to_string(frameTime).c_str());
 				ImGui::End();
-				
+
 				ImGui::Begin("Spline vertex controls");
 				if (ImGui::InputInt("Vertex count", &vertexCount))
 				{
@@ -259,7 +324,7 @@ namespace assignment
 							break;
 						}
 				};
-				
+
 				ImGui::End();
 				ImGui::Render();
 

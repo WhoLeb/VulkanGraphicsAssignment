@@ -34,6 +34,7 @@ namespace assignment
 	public:
 		static std::unique_ptr<Model> createModelFromFile(Device& device, const std::string& filepath);
 		static std::unique_ptr<Model> createModelFromVector(Device& device, const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices);
+		static std::unique_ptr<Model> createSurfaceFromVector(Device& device, const std::vector<Vertex>& vertices, uint32_t rows, uint32_t cols);
 	};
 };
 
