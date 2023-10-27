@@ -10,6 +10,8 @@
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include "glm/glm.hpp"
 
+#include <Eigen/Dense>
+
 #include <memory>
 #include <vector>
 
@@ -34,7 +36,30 @@ namespace assignment
 	public:
 		static std::unique_ptr<Model> createModelFromFile(Device& device, const std::string& filepath);
 		static std::unique_ptr<Model> createModelFromVector(Device& device, const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices);
-		static std::unique_ptr<Model> createSurfaceFromVector(Device& device, const std::vector<Vertex>& vertices, uint32_t rows, uint32_t cols);
+
+		static std::unique_ptr<Model> createSmoothSurfaceFromVector(Device& device, const std::vector<Vertex>& vertices, uint32_t rows, uint32_t cols);
+		static std::unique_ptr<Model> createFlatSurfaceFromVector(Device& device, const std::vector<Vertex>& vertices, uint32_t rows, uint32_t cols);
+
+		static std::vector<Vertex> calculateSplineSurface(
+			int degreeU,
+			int degreeV,
+			std::vector<float>& knotsU,
+			std::vector<float>& knotsV,
+			std::vector<Vertex>& controlPoints
+		);
+
+	private:
+		static Vertex calculateSpline(
+			float u,
+			float v,
+			int degreeU,
+			int degreeV,
+			std::vector<float>& knotsU,
+			std::vector<float>& knotsV,
+			std::vector<Vertex>& controlPoints
+		);
+		static double basisFunction(int i, int p, float u, const std::vector<float>& knots);
+
 	};
 };
 

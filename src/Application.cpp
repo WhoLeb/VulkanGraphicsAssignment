@@ -158,18 +158,47 @@ namespace assignment
 		lineObjects.push_back(std::move(gameObject));
 		bool rebuildSpline = true;
 
-		uint32_t rows = 30, cols = 40;
+		uint32_t rows = 4, cols = 4;
 		std::vector<Model::Vertex> surfaceVertices(rows * cols);
-		for (int i = 0; i < rows; i++)
-		{
-			for (int j = 0; j < cols; j++)
-			{
-				surfaceVertices[i * cols + j].position = { float(j), 0.f, float(i) };
-				surfaceVertices[i * cols + j].color = { 1.f, 0.117f, 0.25f };
-			}
-		}
-		surfaceVertices[6].position += glm::vec3(0.f, -1.f, 0.f);
+		surfaceVertices[0].position = { 0.0, 0.0, 0.0 };  // Верхний левый угол
+		surfaceVertices[1].position = { 1.0, 0.0, 0.0 };
+		surfaceVertices[2].position = { 2.0, 0.0, 0.0 };
+		surfaceVertices[3].position = { 3.0, 0.0, 0.0 };  // Верхний правый угол
+		surfaceVertices[4].position = { 0.0, 1.0, 0.0 };
+		surfaceVertices[5].position = { 1.0, 1.0, 1.0 };  // Центральная точка с высотой 2.0
+		surfaceVertices[6].position = { 2.0, 1.0, 0.0 };
+		surfaceVertices[7].position = { 3.0, 1.0, 0.0 };
+		surfaceVertices[8].position = { 0.0, 2.0, 0.0 };
+		surfaceVertices[9].position = { 1.0, 2.0, 0.0 };
+		surfaceVertices[10].position = { 2.0, 2.0, 0.0 };
+		surfaceVertices[11].position = { 3.0, 2.0, 0.0 };
+		surfaceVertices[12].position = { 0.0, 3.0, 0.0 };  // Нижний левый угол
+		surfaceVertices[13].position = { 1.0, 3.0, 0.0 };
+		surfaceVertices[14].position = { 2.0, 3.0, 0.0 };
+		surfaceVertices[15].position = { 3.0, 3.0, 0.0 };   // 
+		//surfaceVertices[9].position += glm::vec3(0.f, -2.f, 0.f);
+		for (auto& v : surfaceVertices)
+			v.color = { 0.7f, 0.5f, 0.6f };
 
+		int degreeU = 4, degreeV = 4;
+		std::vector<float> knotsU;
+		for (int i = 0; i < 10; i++) knotsU.push_back(static_cast<float>(i));
+		std::vector<float> knotsV;
+		for (int i = 0; i < 10; i++) knotsV.push_back(static_cast<float>(i));
+		std::vector<Model::Vertex> BSplineSurfaceV = Model::calculateSplineSurface(degreeU, degreeV, knotsU, knotsV, surfaceVertices);
+
+		gameObject = GameObject::createGameObject();
+		gameObject.model = Model::createFlatSurfaceFromVector(device, BSplineSurfaceV, rows, cols);
+		gameObject.transform.scale = glm::vec3(1.f);
+		gameObjects.push_back(std::move(gameObject));
+
+		//gameObject = GameObject::createGameObject();
+		//gameObject.model = Model::createFlatSurfaceFromVector(device, surfaceVertices, rows, cols);
+		//gameObject.transform.scale = glm::vec3(1.f);
+		//gameObject.transform.rotation.x = glm::radians(90.f);
+		//gameObjects.push_back(std::move(gameObject));
+
+		/* draw normals
 		std::vector<uint32_t> indices;
 		for (int i = 0; i < rows - 1; i++)
 		{
@@ -195,17 +224,12 @@ namespace assignment
 			glm::vec3 side2 = vec3 - vec1;
 			glm::vec3 triangleNormal = glm::cross(side1, side2);
 
-			surfaceVertices[indices[triangleIndex]].normal += triangleNormal;
-			surfaceVertices[indices[triangleIndex + 1]].normal += triangleNormal;
-			surfaceVertices[indices[triangleIndex + 2]].normal += triangleNormal;
+			surfaceVertices[indices[triangleIndex]].normal = triangleNormal;
+			surfaceVertices[indices[triangleIndex + 1]].normal = triangleNormal;
+			surfaceVertices[indices[triangleIndex + 2]].normal = triangleNormal;
 		}
 		for (auto& v : surfaceVertices)
 			v.normal = glm::normalize(v.normal);
-
-		gameObject = GameObject::createGameObject("Surface");
-		gameObject.model = Model::createSurfaceFromVector(device, surfaceVertices, rows, cols);
-		gameObject.transform.scale = glm::vec3(1.f);
-		gameObjects.push_back(std::move(gameObject));
 
 		for (uint32_t i = 0; i < rows * cols; i++)
 		{
@@ -223,6 +247,7 @@ namespace assignment
 			lineObjects.push_back(std::move(gameObject));
 		}
 
+		*/
 		while (!window.shouldClose())
 		{
 			glfwPollEvents();
