@@ -158,20 +158,20 @@ namespace assignment
 		lineObjects.push_back(std::move(gameObject));
 		bool rebuildSpline = true;
 
-		uint32_t rows = 6, cols = 6;
+		uint32_t rows = 4, cols = 4;
 		std::vector<Model::Vertex> surfaceVertices(rows * cols);
 		for (int i = 0; i < cols; i++)
 		{
 			for (int j = 0; j < rows; j++)
 			{
-				surfaceVertices[i * cols + j].position = { float(j)/(cols-1), 0.f, float(i)/(rows-1) };
-				surfaceVertices[i * cols + j].color = { 1.f, 0.117f, 0.25f };
+				surfaceVertices[i * rows + j].position = { float(j)/(cols-1), 0.f, float(i)/(rows-1) };
+				surfaceVertices[i * rows + j].color = { 1.f, 0.117f, 0.25f };
 			}
 		}
 		surfaceVertices[4].position += glm::vec3(0.f, -0.4f, 0.f);
 		surfaceVertices[9].position += glm::vec3(0.f, -0.3f, 0.f);
-		surfaceVertices[19].position += glm::vec3(0.f, -0.4f, 0.f);
-		surfaceVertices[21].position += glm::vec3(0.f, 0.2f, 0.f);
+		//surfaceVertices[19].position += glm::vec3(0.f, -0.4f, 0.f);
+		//surfaceVertices[21].position += glm::vec3(0.f, 0.2f, 0.f);
 		for (auto& v : surfaceVertices)
 			v.color = { 0.7f, 0.5f, 0.6f };
 
@@ -256,7 +256,7 @@ namespace assignment
 
 			float aspect = renderer.getAspectRatio();
 			//camera.setOrthographicProjection(-aspect, -1, -1, aspect, 1, 30);
-			camera.setPerspecitveProjection(glm::radians(45.f), aspect, 0.1f, 100.f);
+			camera.setPerspecitveProjection(glm::radians(45.f), aspect, 0.1f, 10.f);
 
 			if (auto commandBuffer = renderer.beginFrame())
 			{
@@ -368,12 +368,12 @@ namespace assignment
 
 					if (ImGui::InputInt("Degree in U direction", &degreeU))
 					{
-						degreeU = std::clamp<uint32_t>(degreeU, 1, rows - 1);
+						degreeU = std::clamp<uint32_t>(degreeU, 0, rows - 1);
 						rebuildSplineSurface = true;
 					}
 					if (ImGui::InputInt("Degree in V direction", &degreeV))
 					{
-						degreeV = std::clamp<uint32_t>(degreeV, 1, cols - 1);
+						degreeV = std::clamp<uint32_t>(degreeV, 0, cols - 1);
 						rebuildSplineSurface = true;
 					}
 					if (ImGui::InputInt("Subdivisions", &subdivisions)) rebuildSplineSurface = true;
