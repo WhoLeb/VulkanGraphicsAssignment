@@ -119,17 +119,31 @@ namespace assignment
 
 	}
 
-	std::vector<Model::Vertex> Model::calculateSplineSurface(int degreeU, int degreeV, std::vector<float>& knotsU, std::vector<float>& knotsV, std::vector<Vertex>& controlPoints)
+	std::vector<Model::Vertex> Model::calculateSplineSurface(int degreeU, int degreeV, std::vector<float>& knotsU, std::vector<float>& knotsV, std::vector<Vertex>& controlPoints, uint32_t subdivisions)
 	{
 		std::vector<Vertex> resultVector;
-		for (float u = 0.f; u < knotsU.at(knotsU.size() - 1); u += 0.25f)
+		for (float u = 0.f; u < 1.0001f; u += 1/((float)subdivisions - 1))
 		{
-			for (float v = 0.f; v < knotsV.at(knotsV.size() - 1); v += 0.25f)
+			for (float v = 0.f; v < 1.0001f; v += 1/((float)subdivisions - 1))
 			{
 				resultVector.push_back(calculateSpline(u, v, degreeU, degreeV, knotsU, knotsV, controlPoints));
 			}
 		}
 		return resultVector;
+	}
+
+	std::vector<float> Model::calculateKnots(uint32_t degree, int size)
+	{
+		std::vector<float> knots;
+		for (int i = 0; i < degree + 1; i++)
+			knots.push_back(0.f);
+		for (int i = degree; i < size - 1; i++)
+			knots.push_back(i - degree + 1);
+		for (int i = size; i <= size + degree; i++)
+			knots.push_back(size - degree);
+		for (auto& f : knots)
+			f /= float(size - degree);
+		return knots;
 	}
 
 	Model::Vertex Model::calculateSpline(
@@ -142,49 +156,48 @@ namespace assignment
 		std::vector<Vertex>& controlPoints
 	)
 	{
-		Vertex result;
-		int numRows = controlPoints.size() / (degreeU + 1) + 1;
-		int numCols = controlPoints.size() / numRows;
+		Vertex result{};
+		int m = knotsU.size() - degreeU - 1;
+		int n = knotsV.size() - degreeV - 1;
 
-		for (int i = 0; i < numRows; i++) {
-			for (int j = 0; j < numCols; j++) {
-				double N_i = basisFunction(i, degreeU, u, knotsU);
-				double N_j = basisFunction(j, degreeV, v, knotsV);
-				//double N_ip1 = basisFunction(i + 1, degreeU, u, knotsU);
-				//double N_jp1 = basisFunction(j + 1, degreeV, v, knotsV);
+		for (int i = 0; i < m; i++) {
+			for (int j = 0; j < n; j++) {
+				float N_i = basisFunction(i, degreeU, u, knotsU);
+				float N_j = basisFunction(j, degreeV, v, knotsV);
 
-				int controlPointIndex = i * numCols + j;
+				int controlPointIndex = i * n + j;
 
-				result.position.x += N_i * N_j * controlPoints[controlPointIndex].position.x;
-				result.position.y += N_i * N_j * controlPoints[controlPointIndex].position.y;
-				result.position.z += N_i * N_j * controlPoints[controlPointIndex].position.z;
-
-				//controlPointIndex = (i + 1) * numCols + (j + 1);
-
-				//result.position.x += N_ip1 * N_jp1 * controlPoints[controlPointIndex].position.x;
-				//result.position.y += N_ip1 * N_jp1 * controlPoints[controlPointIndex].position.y;
-				//result.position.z += N_ip1 * N_jp1 * controlPoints[controlPointIndex].position.z;
+				result.position += N_i * N_j * controlPoints[controlPointIndex].position;
 			}
 		}
 
+		result.color = controlPoints[0].color;
 		return result;
 	}
 
-	double Model::basisFunction(int i, int p, float u, const std::vector<float>& knots)
+	float Model::basisFunction(int i, int p, float u, const std::vector<float>& knots)
 	{
 		if (p == 0)
 		{
-			if (u >= knots[i] && u < knots[i + 1])
+			if (u >= knots[i] - 0.00001f && u < knots[i + 1] + 0.00001f)
 				return 1.f;
 			else
 				return 0.f;
 		}
-		float firstFractionTop = (u - knots[i]) * basisFunction(i, p - 1, u, knots);
+		float firstFractionTop = (u - knots[i]);
 		float firstFractionBottom = (knots[i + p] - knots[i]);
-		float firstFraction = firstFractionBottom == 0 ? 0 : firstFractionTop / firstFractionBottom;
-		float secondFractionTop = (knots[i + p + 1] - u) * basisFunction(i + 1, p - 1, u, knots);
+		float firstFraction =
+			(std::abs(firstFractionBottom) < 0.00001f ||
+				std::abs(firstFractionTop) < 0.00001f) ?
+			0 :
+			(firstFractionTop / firstFractionBottom) * basisFunction(i, p - 1, u, knots) ;
+		float secondFractionTop = (knots[i + p + 1] - u);
 		float secondFractionBottom = (knots[i + p + 1] - knots[i + 1]);
-		float secondFraction = secondFractionBottom == 0 ? 0 : secondFractionTop / secondFractionBottom;
+		float secondFraction =
+			(std::abs(secondFractionBottom) < 0.00001f ||
+				std::abs(secondFractionTop) < 0.00001f) ?
+			0 :
+			(secondFractionTop / secondFractionBottom) * basisFunction(i + 1, p - 1, u, knots) ;
 
 		return firstFraction + secondFraction;
 	}

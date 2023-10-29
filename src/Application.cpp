@@ -158,45 +158,40 @@ namespace assignment
 		lineObjects.push_back(std::move(gameObject));
 		bool rebuildSpline = true;
 
-		uint32_t rows = 4, cols = 4;
+		uint32_t rows = 6, cols = 6;
 		std::vector<Model::Vertex> surfaceVertices(rows * cols);
-		surfaceVertices[0].position = { 0.0, 0.0, 0.0 };  // Верхний левый угол
-		surfaceVertices[1].position = { 1.0, 0.0, 0.0 };
-		surfaceVertices[2].position = { 2.0, 0.0, 0.0 };
-		surfaceVertices[3].position = { 3.0, 0.0, 0.0 };  // Верхний правый угол
-		surfaceVertices[4].position = { 0.0, 1.0, 0.0 };
-		surfaceVertices[5].position = { 1.0, 1.0, 1.0 };  // Центральная точка с высотой 2.0
-		surfaceVertices[6].position = { 2.0, 1.0, 0.0 };
-		surfaceVertices[7].position = { 3.0, 1.0, 0.0 };
-		surfaceVertices[8].position = { 0.0, 2.0, 0.0 };
-		surfaceVertices[9].position = { 1.0, 2.0, 0.0 };
-		surfaceVertices[10].position = { 2.0, 2.0, 0.0 };
-		surfaceVertices[11].position = { 3.0, 2.0, 0.0 };
-		surfaceVertices[12].position = { 0.0, 3.0, 0.0 };  // Нижний левый угол
-		surfaceVertices[13].position = { 1.0, 3.0, 0.0 };
-		surfaceVertices[14].position = { 2.0, 3.0, 0.0 };
-		surfaceVertices[15].position = { 3.0, 3.0, 0.0 };   // 
-		//surfaceVertices[9].position += glm::vec3(0.f, -2.f, 0.f);
+		for (int i = 0; i < cols; i++)
+		{
+			for (int j = 0; j < rows; j++)
+			{
+				surfaceVertices[i * cols + j].position = { float(j)/(cols-1), 0.f, float(i)/(rows-1) };
+				surfaceVertices[i * cols + j].color = { 1.f, 0.117f, 0.25f };
+			}
+		}
+		surfaceVertices[4].position += glm::vec3(0.f, -0.4f, 0.f);
+		surfaceVertices[9].position += glm::vec3(0.f, -0.3f, 0.f);
+		surfaceVertices[19].position += glm::vec3(0.f, -0.4f, 0.f);
+		surfaceVertices[21].position += glm::vec3(0.f, 0.2f, 0.f);
 		for (auto& v : surfaceVertices)
 			v.color = { 0.7f, 0.5f, 0.6f };
 
-		int degreeU = 4, degreeV = 4;
-		std::vector<float> knotsU;
-		for (int i = 0; i < 10; i++) knotsU.push_back(static_cast<float>(i));
-		std::vector<float> knotsV;
-		for (int i = 0; i < 10; i++) knotsV.push_back(static_cast<float>(i));
-		std::vector<Model::Vertex> BSplineSurfaceV = Model::calculateSplineSurface(degreeU, degreeV, knotsU, knotsV, surfaceVertices);
+		gameObject = GameObject::createGameObject("Surface control points");
+		gameObject.line = Line::createLineFromVector(device, surfaceVertices);
+		gameObject.transform.scale = glm::vec3(1.f);
+		lineObjects.push_back(std::move(gameObject));
 
-		gameObject = GameObject::createGameObject();
-		gameObject.model = Model::createFlatSurfaceFromVector(device, BSplineSurfaceV, rows, cols);
+		int degreeU = 3, degreeV = 3;
+		std::vector<float> knotsU = Model::calculateKnots(degreeU, rows);
+		std::vector<float> knotsV = Model::calculateKnots(degreeV, cols);
+		int subdivisions = 200;
+		std::vector<Model::Vertex> BSplineSurfaceV = Model::calculateSplineSurface(degreeU, degreeV, knotsU, knotsV, surfaceVertices, subdivisions);
+
+		gameObject = GameObject::createGameObject("Spline Surface");
+		gameObject.model = Model::createFlatSurfaceFromVector(device, BSplineSurfaceV, subdivisions, subdivisions);
 		gameObject.transform.scale = glm::vec3(1.f);
 		gameObjects.push_back(std::move(gameObject));
+		bool rebuildSplineSurface = true;
 
-		//gameObject = GameObject::createGameObject();
-		//gameObject.model = Model::createFlatSurfaceFromVector(device, surfaceVertices, rows, cols);
-		//gameObject.transform.scale = glm::vec3(1.f);
-		//gameObject.transform.rotation.x = glm::radians(90.f);
-		//gameObjects.push_back(std::move(gameObject));
 
 		/* draw normals
 		std::vector<uint32_t> indices;
@@ -292,65 +287,120 @@ namespace assignment
 				ImGui::Text(std::to_string(frameTime).c_str());
 				ImGui::End();
 
-				ImGui::Begin("Spline vertex controls");
-				if (ImGui::InputInt("Vertex count", &vertexCount))
 				{
-					if (vertexCount < 2)
+					ImGui::Begin("Spline vertex controls");
+					if (ImGui::InputInt("Vertex count", &vertexCount))
 					{
-						ImGui::Text("Wrong size, setting it to 2");
-						vertexCount = 2;
+						if (vertexCount < 2)
+						{
+							ImGui::Text("Wrong size, setting it to 2");
+							vertexCount = 2;
+						}
+						splineVertices.resize(vertexCount);
+						rebuildSpline = true;
 					}
-					splineVertices.resize(vertexCount);
-					rebuildSpline = true;
+
+					if (ImGui::CollapsingHeader("Vertex positions"))
+					{
+						for (int i = 0; i < vertexCount; i++)
+						{
+							if (ImGui::DragFloat3(
+								std::format("Vertex {} position", i).c_str(),
+								(float*)&splineVertices[i].position,
+								0.01f))
+							{
+								rebuildSpline = true;
+							}
+						}
+					}
+
+					if (ImGui::InputInt("B-Spline subdivisions", &BSplineSubdivisions)) rebuildSpline = true;
+					if (ImGui::InputInt("B-Spline degree", &BSplineDegree, 1, 3)) rebuildSpline = true;
+
+					bool ph1, ph2, ph3;
+					if (ImGui::Checkbox("Show base line", &ph1))
+					{
+						for (uint32_t i = 0; i < lineObjects.size(); i++)
+							if (lineObjects[i].getName() == "SplineBase")
+							{
+								lineObjects[i].changeVisibility();
+								break;
+							}
+					};
+					if (ImGui::Checkbox("Show Cubic Spline", &ph2))
+					{
+						for (uint32_t i = 0; i < lineObjects.size(); i++)
+							if (lineObjects[i].getName() == "CubicSpline")
+							{
+								lineObjects[i].changeVisibility();
+								break;
+							}
+					};
+					if (ImGui::Checkbox("Show B-Spline", &ph3))
+					{
+						for (uint32_t i = 0; i < lineObjects.size(); i++)
+							if (lineObjects[i].getName() == "B-Spline")
+							{
+								lineObjects[i].changeVisibility();
+								break;
+							}
+					};
+
+					ImGui::End();
 				}
 
-				if (ImGui::CollapsingHeader("Vertex positions"))
 				{
-					for (int i = 0; i < vertexCount; i++)
+					ImGui::Begin("B-Spline Surface controls");
+
+					if (ImGui::CollapsingHeader("Vertex positions"))
 					{
-						if (ImGui::DragFloat3(
-							std::format("Vertex {} position", i).c_str(),
-							(float*)&splineVertices[i].position,
-							0.01f))
+						for (int i = 0; i < surfaceVertices.size(); i++)
 						{
-							rebuildSpline = true;
+							if (ImGui::DragFloat3(
+								std::format("Vertex {} position", i).c_str(),
+								(float*)&surfaceVertices[i].position,
+								0.01f))
+							{
+								rebuildSplineSurface = true;
+							}
 						}
 					}
+
+					if (ImGui::InputInt("Degree in U direction", &degreeU))
+					{
+						degreeU = std::clamp<uint32_t>(degreeU, 1, rows - 1);
+						rebuildSplineSurface = true;
+					}
+					if (ImGui::InputInt("Degree in V direction", &degreeV))
+					{
+						degreeV = std::clamp<uint32_t>(degreeV, 1, cols - 1);
+						rebuildSplineSurface = true;
+					}
+					if (ImGui::InputInt("Subdivisions", &subdivisions)) rebuildSplineSurface = true;
+
+					bool ph1, ph2;
+					if (ImGui::Checkbox("Show surface control points", &ph1))
+					{
+						for (uint32_t i = 0; i < lineObjects.size(); i++)
+							if (lineObjects[i].getName() == "Surface control points")
+							{
+								lineObjects[i].changeVisibility();
+								break;
+							}
+					};
+					if (ImGui::Checkbox("Show spline surface", &ph2))
+					{
+						for (uint32_t i = 0; i < lineObjects.size(); i++)
+							if (gameObjects[i].getName() == "Spline Surface")
+							{
+								gameObjects[i].changeVisibility();
+								break;
+							}
+					};
+
+					ImGui::End();
 				}
 
-				if (ImGui::InputInt("B-Spline subdivisions", &BSplineSubdivisions)) rebuildSpline = true;
-				if (ImGui::InputInt("B-Spline degree", &BSplineDegree, 1, 3)) rebuildSpline = true;
-
-				bool ph1, ph2, ph3;
-				if (ImGui::Checkbox("Show base line", &ph1))
-				{
-					for (uint32_t i = 0; i < lineObjects.size(); i++)
-						if (lineObjects[i].getName() == "SplineBase")
-						{
-							lineObjects[i].changeVisibility();
-							break;
-						}
-				};
-				if (ImGui::Checkbox("Show Cubic Spline", &ph2))
-				{
-					for (uint32_t i = 0; i < lineObjects.size(); i++)
-						if (lineObjects[i].getName() == "CubicSpline")
-						{
-							lineObjects[i].changeVisibility();
-							break;
-						}
-				};
-				if (ImGui::Checkbox("Show B-Spline", &ph3))
-				{
-					for (uint32_t i = 0; i < lineObjects.size(); i++)
-						if (lineObjects[i].getName() == "B-Spline")
-						{
-							lineObjects[i].changeVisibility();
-							break;
-						}
-				};
-
-				ImGui::End();
 				ImGui::Render();
 
 				if (rebuildSpline)
@@ -370,6 +420,22 @@ namespace assignment
 					spline = Line::calculateBSplineOpened(device, splineVertices, BSplineDegree, BSplineSubdivisions);
 					lineObjects[5].line = spline;
 					rebuildSpline = false;
+				}
+
+				if (rebuildSplineSurface)
+				{
+					for (auto& v : surfaceVertices)
+						v.color = { 1.f, 1.f, 0.f };
+					lineObjects[6].line = Line::createLineFromVector(device, surfaceVertices);
+
+					knotsU = Model::calculateKnots(degreeU, rows);
+					knotsV = Model::calculateKnots(degreeV, cols);
+
+					surfaceVertices[0].color = { 0.7f, 0.5f, 0.6f };
+					BSplineSurfaceV = Model::calculateSplineSurface(degreeU, degreeV, knotsU, knotsV, surfaceVertices, subdivisions);
+					gameObjects[0].model = Model::createFlatSurfaceFromVector(device, BSplineSurfaceV, subdivisions, subdivisions);
+
+					rebuildSplineSurface = false;
 				}
 
 				// render

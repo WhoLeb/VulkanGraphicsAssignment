@@ -214,14 +214,14 @@ namespace assignment
 			else
 				return 0;
 		}
-		float firstFractionTop = (t - ts[i]) * basisFunction(i, k - 1, ts, t);
+		float firstFractionTop = (t - ts[i]);
 		float firstFractionBottom = (ts[i + k] - ts[i]);
 		float firstFraction = firstFractionBottom == 0 ? 0 : firstFractionTop / firstFractionBottom;
-		float secondFractionTop = (ts[i + k + 1] - t) * basisFunction(i + 1, k - 1, ts, t);
+		float secondFractionTop = (ts[i + k + 1] - t);
 		float secondFractionBottom = (ts[i + k + 1] - ts[i + 1]);
 		float secondFraction = secondFractionBottom == 0 ? 0 : secondFractionTop / secondFractionBottom;
 
-		return firstFraction + secondFraction;
+		return firstFraction * basisFunction(i, k - 1, ts, t) + secondFraction * basisFunction(i + 1, k - 1, ts, t);
 	}
 
 	std::vector<Line::Vertex> Line::calculateBSpline(const std::vector<Vertex>& vertices, uint32_t degree, const std::vector<float>& ts, uint32_t subdivisions)

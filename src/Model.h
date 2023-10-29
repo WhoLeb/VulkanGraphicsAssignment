@@ -45,10 +45,13 @@ namespace assignment
 			int degreeV,
 			std::vector<float>& knotsU,
 			std::vector<float>& knotsV,
-			std::vector<Vertex>& controlPoints
+			std::vector<Vertex>& controlPoints,
+			uint32_t subdivisions = 10
 		);
 
-	private:
+		static std::vector<float> calculateKnots(uint32_t degree, int size);
+
+	public:
 		static Vertex calculateSpline(
 			float u,
 			float v,
@@ -58,7 +61,7 @@ namespace assignment
 			std::vector<float>& knotsV,
 			std::vector<Vertex>& controlPoints
 		);
-		static double basisFunction(int i, int p, float u, const std::vector<float>& knots);
+		static float basisFunction(int i, int p, float u, const std::vector<float>& knots);
 
 	};
 };

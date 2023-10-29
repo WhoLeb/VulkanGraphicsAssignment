@@ -71,6 +71,8 @@ namespace assignment
 
 		for (auto& obj : gameObjects)
 		{
+			if (!obj.visible)
+				continue;
 			SimplePushConstantData push{};
 			push.modelMatrix = obj.transform.mat4();
 			push.normalMatrix = obj.transform.normalMatrix();
