@@ -10,15 +10,22 @@
 
 namespace assignment
 {
-	Line::Line(Device& device, const std::vector<Vertex>& vertices)
-		: GraphicsPrimitive(device, vertices)
+	Line::Line(Device& device, const std::vector<Vertex>& vertices, const std::vector<uint32_t>* indices)
+		: GraphicsPrimitive(device, vertices, indices)
 	{}
 
 	Line::~Line() {}
 
 	std::unique_ptr<Line> Line::createLineFromVector(Device& device, const std::vector<Vertex>& vertices)
 	{
-		return std::make_unique<Line>(device, vertices);
+		std::vector<uint32_t> indices;
+		for (uint32_t i = 0; i < vertices.size(); i++)
+		{
+			indices.insert(indices.end(), { i, i });
+		}
+		indices.erase(indices.begin());
+		indices.erase(indices.end() - 1);
+		return std::make_unique<Line>(device, vertices, &indices);
 	}
 
 	std::unique_ptr<Line> Line::calculateCubicSplineWithCustomStep(Device& device, const std::vector<Vertex>& vertices, glm::vec3 P1, glm::vec3 Pn, const std::vector<float>& taus)
@@ -90,7 +97,7 @@ namespace assignment
 			newVertexArray.push_back(v);
 		}
 
-		return std::make_unique<Line>(device, newVertexArray);
+		return createLineFromVector(device, newVertexArray);
 	}
 
 	std::unique_ptr<Line> Line::calculateCubicSplineEvenlySpaced(Device& device, const std::vector<Vertex>& vertices, glm::vec3 P1, glm::vec3 Pn, uint32_t n)
@@ -121,7 +128,7 @@ namespace assignment
 			ts.push_back(vertices.size() - degree + 1);
 
 		std::vector<Vertex> newVertexVector = calculateBSpline(vertices, degree-1, ts, subdivisions);
-		return std::make_unique<Line>(device, newVertexVector);
+		return createLineFromVector(device, newVertexVector);
 	}
 
 	std::unique_ptr<Line> Line::calculateBSplineEvenlySpaced(Device& device, const std::vector<Vertex>& vertices, uint32_t degree, uint32_t n, uint32_t subdivisions)
@@ -130,7 +137,7 @@ namespace assignment
 		for (int i = 0; i < vertices.size() + degree + 1; i++)
 			ts.push_back(static_cast<float>(i));
 		std::vector<Vertex> newVertexVector = calculateBSpline(vertices, degree-1, ts, subdivisions);
-		return std::make_unique<Line>(device, newVertexVector);
+		return createLineFromVector(device, newVertexVector);
 	}
 
 	void Line::calculateTs(const std::vector<Vertex>& vertices, std::vector<float>& t)

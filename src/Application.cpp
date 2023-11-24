@@ -20,6 +20,111 @@
 #include <iostream>
 #include <format>
 
+#include <random>
+
+namespace
+{
+	std::shared_ptr<assignment::Line> clipLine(
+		assignment::Device& device,
+		std::vector<assignment::Line::Vertex>& lines,
+		float xmin = 0, float xmax = 1,
+		float ymin = 0, float ymax = 1,
+		float zmin = 0, float zmax = 1
+	)
+	{
+		std::shared_ptr<assignment::Line> clippedLine;
+		if (!(
+			(lines[0].position.x <= xmin && lines[1].position.x <= xmin) || (lines[0].position.x >= xmax && lines[1].position.x >= xmax) ||
+			(lines[0].position.y <= ymin && lines[1].position.y <= ymin) || (lines[0].position.y >= ymax && lines[1].position.y >= ymax) ||
+			(lines[0].position.z <= zmin && lines[1].position.z <= zmin) || (lines[0].position.z >= zmax && lines[1].position.z >= zmax)
+			))
+		{
+			float a = lines[1].position.x - lines[0].position.x;
+			float b = lines[1].position.y - lines[0].position.y;
+			float c = lines[1].position.z - lines[0].position.z;
+			for (int i = 0; i <= 1; i++)
+			{
+				if (lines[i].position.x <= xmin)
+				{
+					lines[i].position.y = b / a * (xmin - lines[0].position.x) + lines[0].position.y;
+					lines[i].position.z = c / a * (xmin - lines[0].position.x) + lines[0].position.z;
+					lines[i].position.x = xmin;
+				}
+				else if (lines[i].position.x >= xmax)
+				{
+					lines[i].position.y = b / a * (xmax - lines[0].position.x) + lines[0].position.y;
+					lines[i].position.z = c / a * (xmax - lines[0].position.x) + lines[0].position.z;
+					lines[i].position.x = xmax;
+				}
+				if (lines[i].position.y <= ymin)
+				{
+					lines[i].position.x = a / b * (ymin - lines[0].position.y) + lines[0].position.x;
+					lines[i].position.z = c / b * (ymin - lines[0].position.y) + lines[0].position.z;
+					lines[i].position.y = ymin;
+				}
+				else if (lines[i].position.y >= ymax)
+				{
+					lines[i].position.x = a / b * (ymax - lines[0].position.y) + lines[0].position.x;
+					lines[i].position.z = c / b * (ymax - lines[0].position.y) + lines[0].position.z;
+					lines[i].position.y = ymax;
+				}
+				if (lines[i].position.z <= zmin)
+				{
+					lines[i].position.x = a / c * (zmin - lines[0].position.z) + lines[0].position.x;
+					lines[i].position.y = b / c * (zmin - lines[0].position.z) + lines[0].position.y;
+					lines[i].position.z = zmin;
+				}
+				else if (lines[i].position.z >= zmax)
+				{
+					lines[i].position.x = a / c * (zmax - lines[0].position.z) + lines[0].position.x;
+					lines[i].position.y = b / c * (zmax - lines[0].position.z) + lines[0].position.y;
+					lines[i].position.z = zmax;
+				}
+			}
+		}
+		else return nullptr;
+		clippedLine = assignment::Line::createLineFromVector(device, lines);
+		return clippedLine;
+	}
+
+	struct RandomLine
+	{
+		RandomLine(
+			float xmin, float xmax,
+			float ymin, float ymax,
+			float zmin, float zmax)
+		{
+			std::random_device rd;
+			std::default_random_engine engine(rd());
+			std::uniform_real_distribution<float> xdist(xmin, xmax);
+			std::uniform_real_distribution<float> ydist(ymin, ymax);
+			std::uniform_real_distribution<float> zdist(zmin, zmax);
+
+			x1 = xdist(engine);
+			x2 = xdist(engine);
+			y1 = ydist(engine);
+			y2 = ydist(engine);
+			z1 = zdist(engine);
+			z2 = zdist(engine);
+		}
+
+		float x1, x2, y1, y2, z1, z2;
+	};
+
+	std::vector<RandomLine> createRandomLines(
+		int n,
+		float xmin = 0, float xmax = 1,
+		float ymin = 0, float ymax = 1,
+		float zmin = 0, float zmax = 1
+		)
+	{
+		std::vector<RandomLine> randomLines;
+		for (int i = 0; i < n; i++)
+			randomLines.push_back(RandomLine{ xmin, xmax, ymin, ymax, zmin, zmax });
+		return randomLines;
+	}
+}
+
 namespace assignment
 {
 	struct GlobalUbo {
@@ -193,6 +298,41 @@ namespace assignment
 		bool rebuildSplineSurface = true;
 
 
+		float xmin = 0.4f, xmax = 0.6f, ymin = 0, ymax = 1, zmin = 0, zmax = 1;
+		std::vector<RandomLine> randomLines = createRandomLines(100);
+
+		for (const auto& rl : randomLines)
+		{
+			std::vector<Line::Vertex> randomLineVertices(2);
+			randomLineVertices[0].position = { rl.x1, rl.y1, rl.z1 };
+			randomLineVertices[0].color = { 1.f, 1.f, 0.f };
+			randomLineVertices[1].position = { rl.x2, rl.y2, rl.z2 };
+			randomLineVertices[1].color = { 1.f, 1.f, 0.f };
+
+			auto clippedRandomLine = clipLine(device, randomLineVertices, xmin, xmax, ymin, ymax, zmin, zmax);
+			if (!clippedRandomLine) continue;
+
+			gameObject = GameObject::createGameObject("crl");
+			gameObject.transform.scale = { 1.f };
+			gameObject.line = clippedRandomLine;
+			lineObjects.push_back(std::move(gameObject));
+		}
+
+		for (const auto& rl : randomLines)
+		{
+			std::vector<Line::Vertex> randomLineVertices(2);
+			randomLineVertices[0].position = { rl.x1, rl.y1, rl.z1 };
+			randomLineVertices[0].color = { 1.f, 0.f, 0.f };
+			randomLineVertices[1].position = { rl.x2, rl.y2, rl.z2 };
+			randomLineVertices[1].color = { 1.f, 0.f, 0.f };
+
+
+			gameObject = GameObject::createGameObject("rl");
+			gameObject.transform.scale = { 1.f };
+			gameObject.line = Line::createLineFromVector(device, randomLineVertices);
+			lineObjects.push_back(std::move(gameObject));
+		}
+
 		/* draw normals
 		std::vector<uint32_t> indices;
 		for (int i = 0; i < rows - 1; i++)
@@ -347,6 +487,25 @@ namespace assignment
 					};
 
 					ImGui::End();
+
+					if (rebuildSpline)
+					{
+						for (auto& v : splineVertices)
+							v.color = { 1.f, 0.f, 0.f };
+						spline = Line::createLineFromVector(device, splineVertices);
+						lineObjects[3].line = spline;
+
+						for (auto& v : splineVertices)
+							v.color = { 0.f, 1.f, 0.f };
+						spline = Line::calculateCubicSplineEvenlySpaced(device, splineVertices, glm::vec3(1.f), glm::vec3(1.f), 20);
+						lineObjects[4].line = spline;
+
+						for (auto& v : splineVertices)
+							v.color = { 1.f, 0.f, 1.f };
+						spline = Line::calculateBSplineOpened(device, splineVertices, BSplineDegree, BSplineSubdivisions);
+						lineObjects[5].line = spline;
+						rebuildSpline = false;
+					}
 				}
 
 				{
@@ -399,44 +558,50 @@ namespace assignment
 					};
 
 					ImGui::End();
+
+					if (rebuildSplineSurface)
+					{
+						for (auto& v : surfaceVertices)
+							v.color = { 1.f, 1.f, 0.f };
+						lineObjects[6].line = Line::createLineFromVector(device, surfaceVertices);
+
+						knotsU = Model::calculateKnots(degreeU, rows);
+						knotsV = Model::calculateKnots(degreeV, cols);
+
+						surfaceVertices[0].color = { 0.7f, 0.5f, 0.6f };
+						BSplineSurfaceV = Model::calculateSplineSurface(degreeU, degreeV, knotsU, knotsV, surfaceVertices, subdivisions);
+						gameObjects[0].model = Model::createFlatSurfaceFromVector(device, BSplineSurfaceV, subdivisions, subdivisions);
+
+						rebuildSplineSurface = false;
+					}
+				}
+
+				{
+					ImGui::Begin("Random lines clipping");
+
+					bool b1, b2;
+					if (ImGui::Checkbox("Show unclipped random lines", &b1))
+					{
+						for (uint32_t i = 0; i < lineObjects.size(); i++)
+							if (lineObjects[i].getName() == "rl")
+							{
+								lineObjects[i].changeVisibility();
+							}
+					};
+					if (ImGui::Checkbox("Show clipped random lines", &b2))
+					{
+						for (uint32_t i = 0; i < lineObjects.size(); i++)
+							if (lineObjects[i].getName() == "crl")
+							{
+								lineObjects[i].changeVisibility();
+							}
+					};
+
+					ImGui::End();
 				}
 
 				ImGui::Render();
 
-				if (rebuildSpline)
-				{
-					for (auto& v : splineVertices)
-						v.color = { 1.f, 0.f, 0.f };
-					spline = Line::createLineFromVector(device, splineVertices);
-					lineObjects[3].line = spline;
-
-					for (auto& v : splineVertices)
-						v.color = { 0.f, 1.f, 0.f };
-					spline = Line::calculateCubicSplineEvenlySpaced(device, splineVertices, glm::vec3(1.f), glm::vec3(1.f), 20);
-					lineObjects[4].line = spline;
-
-					for (auto& v : splineVertices)
-						v.color = { 1.f, 0.f, 1.f };
-					spline = Line::calculateBSplineOpened(device, splineVertices, BSplineDegree, BSplineSubdivisions);
-					lineObjects[5].line = spline;
-					rebuildSpline = false;
-				}
-
-				if (rebuildSplineSurface)
-				{
-					for (auto& v : surfaceVertices)
-						v.color = { 1.f, 1.f, 0.f };
-					lineObjects[6].line = Line::createLineFromVector(device, surfaceVertices);
-
-					knotsU = Model::calculateKnots(degreeU, rows);
-					knotsV = Model::calculateKnots(degreeV, cols);
-
-					surfaceVertices[0].color = { 0.7f, 0.5f, 0.6f };
-					BSplineSurfaceV = Model::calculateSplineSurface(degreeU, degreeV, knotsU, knotsV, surfaceVertices, subdivisions);
-					gameObjects[0].model = Model::createFlatSurfaceFromVector(device, BSplineSurfaceV, subdivisions, subdivisions);
-
-					rebuildSplineSurface = false;
-				}
 
 				// render
 				renderer.beginSwapChainRenderPass(commandBuffer);
@@ -457,10 +622,10 @@ namespace assignment
 
 	void Application::loadGameObjects()
 	{
-		//std::shared_ptr<Model> cube = Model::createModelFromFile(device, "./assets/meshes/cube.obj");
+		//std::shared_ptr<Model> cube = Model::createModelFromFile(device, "./assets/meshes/colored_cube.obj");
 		//auto cubeObject = GameObject::createGameObject();
 		//cubeObject.model = cube;
-		//cubeObject.transform.scale = glm::vec3(0.005f);
+		//cubeObject.transform.scale = glm::vec3(0.5f);
 		//cubeObject.transform.translation = { .6f, -.1f, 0.f };
 		//gameObjects.push_back(std::move(cubeObject));
 

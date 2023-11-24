@@ -39,6 +39,12 @@ namespace assignment
 			}
 		};
 
+		struct Builder
+		{
+			std::vector<Vertex> vertices{};
+			std::vector<uint32_t> indices{};
+		};
+
 		GraphicsPrimitive(Device& device, const std::vector<Vertex>& vertices, const std::vector<uint32_t>* indices = nullptr);
 
 	public:
