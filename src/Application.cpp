@@ -570,7 +570,14 @@ namespace assignment
 
 						surfaceVertices[0].color = { 0.7f, 0.5f, 0.6f };
 						BSplineSurfaceV = Model::calculateSplineSurface(degreeU, degreeV, knotsU, knotsV, surfaceVertices, subdivisions);
-						gameObjects[0].model = Model::createFlatSurfaceFromVector(device, BSplineSurfaceV, subdivisions, subdivisions);
+						for (auto& go : gameObjects)
+						{
+							if (go.getName() == "Spline Surface")
+							{
+								go.model = Model::createFlatSurfaceFromVector(device, BSplineSurfaceV, subdivisions, subdivisions);
+								break;
+							}
+						}
 
 						rebuildSplineSurface = false;
 					}
@@ -622,12 +629,18 @@ namespace assignment
 
 	void Application::loadGameObjects()
 	{
-		//std::shared_ptr<Model> cube = Model::createModelFromFile(device, "./assets/meshes/colored_cube.obj");
-		//auto cubeObject = GameObject::createGameObject();
-		//cubeObject.model = cube;
-		//cubeObject.transform.scale = glm::vec3(0.5f);
-		//cubeObject.transform.translation = { .6f, -.1f, 0.f };
-		//gameObjects.push_back(std::move(cubeObject));
+		std::shared_ptr<Model> cube = Model::createModelFromFile(device, "./assets/meshes/cube.obj");
+		auto cubeObject = GameObject::createGameObject();
+		cubeObject.model = cube;
+		cubeObject.transform.scale = glm::vec3(0.5f);
+		cubeObject.transform.translation = { 1.6f, -.1f, 0.f };
+		gameObjects.push_back(std::move(cubeObject));
+
+		cubeObject = GameObject::createGameObject();
+		cubeObject.model = cube;
+		cubeObject.transform.scale = glm::vec3(0.5f);
+		cubeObject.transform.translation = { 3.6f, -.1f, 1.f };
+		gameObjects.push_back(std::move(cubeObject));
 
 
 		Line::Vertex v1, v2;
@@ -693,12 +706,6 @@ namespace assignment
 		initInfo.ImageCount = SwapChain::MAX_FRAMES_IN_FLIGHT;
 		initInfo.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
 		ImGui_ImplVulkan_Init(&initInfo, renderer.getSwapChainRenderPass());
-
-		VkCommandBuffer commandBuffer = device.beginSingleTimeCommands();
-		ImGui_ImplVulkan_CreateFontsTexture(commandBuffer);
-		device.endSingleTimeCommands(commandBuffer);
-		vkDeviceWaitIdle(device.device());
-		ImGui_ImplVulkan_DestroyFontUploadObjects();
 	}
 
 }

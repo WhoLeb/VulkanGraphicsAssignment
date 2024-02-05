@@ -43,8 +43,8 @@ namespace assignment
 			return go;
 		}
 
-		const id_t getId() { return id; }
-		const std::string getName() { return name; }
+		id_t getId() const { return id; }
+		std::string getName() const { return name; }
 		void changeVisibility() { visible = !visible; }
 
 		std::shared_ptr<Model> model{};
